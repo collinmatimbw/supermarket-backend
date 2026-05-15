@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: supermarket-crm-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    disk:
+      name: excel-data
+      mountPath: /opt/render/project/src/excel
+      sizeGB: 1
