@@ -226,3 +226,51 @@ body::before {
   z-index: 0;
   opacity: 0.4;
 }
+
+/* ── Print Styles ── */
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  body::before { display: none !important; }
+  body > * { display: none !important; }
+  #receipt {
+    display: block !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 340px !important;
+    max-width: 95vw !important;
+    margin: 0 auto !important;
+    padding: 28px 24px !important;
+    background: white !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: 15px !important;
+    line-height: 1.7 !important;
+    color: #000 !important;
+  }
+  #receipt * {
+    display: revert !important;
+    color: #000 !important;
+    background: transparent !important;
+    border-color: #aaa !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  #receipt img {
+    width: 64px !important;
+    height: 64px !important;
+    margin: 0 auto 10px !important;
+  }
+  #receipt [class*="border-"] { border-color: #aaa !important; }
+  #receipt [class*="bg-"] { background: transparent !important; }
+  #receipt [class*="rounded-"] { border-radius: 0 !important; }
+  #receipt [style*="background"] { background: transparent !important; }
+  @page { margin: 0; }
+}

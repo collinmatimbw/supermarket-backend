@@ -75,31 +75,52 @@ router.get('/analytics', (req, res) => {
   try {
     const sales = readExcel('sales');
     const products = readExcel('products');
+    const period = req.query.period || '7d';
 
-    const last7 = {};
     const today = new Date();
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
-      last7[key] = { revenue: 0, profit: 0 };
+    let startDate;
+
+    switch (period) {
+      case '30d': startDate = new Date(today); startDate.setDate(startDate.getDate() - 30); break;
+      case '90d': startDate = new Date(today); startDate.setDate(startDate.getDate() - 90); break;
+      case '1y': startDate = new Date(today); startDate.setFullYear(startDate.getFullYear() - 1); break;
+      case 'all': startDate = new Date(0); break;
+      default: startDate = new Date(today); startDate.setDate(startDate.getDate() - 7); break;
     }
-    sales.forEach(s => {
-      if (last7.hasOwnProperty(s.date)) {
-        last7[s.date].revenue += Number(s.total) || 0;
-        last7[s.date].profit += Number(s.profit) || 0;
-      }
+
+    const filtered = sales.filter(s => new Date(s.date) >= startDate);
+
+    // Group by day or month based on period length
+    const grouped = {};
+    const isLongRange = period === '1y' || period === 'all';
+    filtered.forEach(s => {
+      const d = new Date(s.date);
+      const key = isLongRange
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        : s.date;
+      if (!grouped[key]) grouped[key] = { revenue: 0, profit: 0, transactions: 0 };
+      grouped[key].revenue += Number(s.total) || 0;
+      grouped[key].profit += Number(s.profit) || 0;
+      grouped[key].transactions += 1;
     });
 
+    const sortedKeys = Object.keys(grouped).sort();
+    const dailyRevenue = sortedKeys.map(key => ({
+      date: key,
+      revenue: grouped[key].revenue,
+      profit: grouped[key].profit,
+      transactions: grouped[key].transactions,
+    }));
+
     const catRevenue = {};
-    sales.forEach(s => {
+    filtered.forEach(s => {
       const prod = products.find(p => p.id === s.productId);
       const cat = prod ? prod.category : 'General';
       catRevenue[cat] = (catRevenue[cat] || 0) + Number(s.total);
     });
 
     const prodSales = {};
-    sales.forEach(s => {
+    filtered.forEach(s => {
       prodSales[s.productName] = (prodSales[s.productName] || 0) + Number(s.total);
     });
     const topProducts = Object.entries(prodSales)
@@ -107,18 +128,19 @@ router.get('/analytics', (req, res) => {
       .slice(0, 5)
       .map(([name, revenue]) => ({ name, revenue }));
 
-    const totalRevenue = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-    const totalProfit = sales.reduce((sum, s) => sum + (Number(s.profit) || 0), 0);
+    const totalRevenue = filtered.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+    const totalProfit = filtered.reduce((sum, s) => sum + (Number(s.profit) || 0), 0);
 
     res.json({
       success: true,
       data: {
-        dailyRevenue: Object.entries(last7).map(([date, d]) => ({ date, revenue: d.revenue, profit: d.profit })),
+        dailyRevenue,
         categoryRevenue: Object.entries(catRevenue).map(([cat, revenue]) => ({ category: cat, revenue })),
         topProducts,
         totalRevenue,
         totalProfit,
-        totalSales: sales.length,
+        totalSales: filtered.length,
+        period,
       }
     });
   } catch (err) {

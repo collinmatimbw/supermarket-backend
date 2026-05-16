@@ -85,17 +85,17 @@ export default function Products() {
       />
 
       {/* Filters */}
-      <div className="glass p-4 mb-4 flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-48">
+      <div className="glass p-3 sm:p-4 mb-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative w-full sm:flex-1 sm:min-w-48">
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input className="form-input pl-9" placeholder="Search products, barcode, supplier..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Filter size={13} className="text-slate-500" />
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Filter size={13} className="text-slate-500 flex-shrink-0" />
           {CATEGORIES.map(cat => (
             <button key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 categoryFilter === cat
                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                   : 'text-slate-400 hover:text-slate-200 border border-white/6 hover:border-white/12'
@@ -164,8 +164,8 @@ export default function Products() {
 
       {/* Modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Product' : 'Add New Product'}>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
             <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Product Name *</label>
             <input className="form-input" placeholder="e.g. White Rice (5kg)" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           </div>

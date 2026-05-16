@@ -12,23 +12,33 @@ import { formatCurrency, formatDate, isLowStock } from '../utils/helpers';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler);
 
+const PERIODS = [
+  { key: '7d', label: '7 Days' },
+  { key: '30d', label: '30 Days' },
+  { key: '90d', label: '90 Days' },
+  { key: '1y', label: '1 Year' },
+  { key: 'all', label: 'All Time' },
+];
+
 export default function Dashboard() {
   const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState('7d');
 
   useEffect(() => {
+    setLoading(true);
     Promise.all([
       api.get('/products'),
       api.get('/sales'),
-      api.get('/sales/analytics'),
+      api.get(`/sales/analytics?period=${period}`),
     ]).then(([p, s, a]) => {
       setProducts(p.data.data);
       setSales(s.data.data);
       setAnalytics(a.data.data);
     }).finally(() => setLoading(false));
-  }, []);
+  }, [period]);
 
   const totalRevenue = sales.reduce((s, sale) => s + Number(sale.total || 0), 0);
   const lowStockCount = products.filter(p => isLowStock(p.quantity)).length;
@@ -36,6 +46,12 @@ export default function Dashboard() {
 
   const lineData = analytics ? {
     labels: analytics.dailyRevenue.map(d => {
+      const isMonthly = d.date.length === 7;
+      if (isMonthly) {
+        const [y, m] = d.date.split('-');
+        const dt = new Date(y, m - 1);
+        return dt.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' });
+      }
       const dt = new Date(d.date);
       return dt.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
     }),
@@ -133,14 +149,25 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         {/* Line Chart */}
         <div className="glass p-5 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <div>
               <h3 className="font-semibold text-slate-200 text-sm">Revenue Trend</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Last 7 days</p>
+              <p className="text-xs text-slate-500 mt-0.5">{analytics?.dailyRevenue?.length || 0} data points</p>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(110,231,183,0.08)' }}>
-              <TrendingUp size={13} className="text-emerald-400" />
-              <span className="text-xs font-semibold text-emerald-400">Live</span>
+            <div className="flex flex-wrap items-center gap-1">
+              {PERIODS.map(p => (
+                <button
+                  key={p.key}
+                  onClick={() => setPeriod(p.key)}
+                  className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${
+                    period === p.key
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
           </div>
           <div style={{ height: 200 }}>

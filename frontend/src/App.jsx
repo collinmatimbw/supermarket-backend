@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { Menu } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
@@ -8,16 +9,29 @@ import Sales from './pages/Sales';
 import Customers from './pages/Customers';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import Predictions from './pages/Predictions';
 
 function Layout({ children }) {
+  const [mobileSidebar, setMobileSidebar] = useState(false);
+
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      <Sidebar mobileOpen={mobileSidebar} onToggleMobile={() => setMobileSidebar(!mobileSidebar)} />
       <main className="flex-1 overflow-auto relative z-10">
         {/* Top gradient accent */}
         <div className="fixed top-0 left-0 right-0 h-px z-20"
           style={{ background: 'linear-gradient(90deg, transparent, rgba(110,231,183,0.3), rgba(56,189,248,0.3), transparent)' }} />
-        <div className="p-6 max-w-7xl mx-auto">
+        {/* Mobile header */}
+        <div className="lg:hidden flex items-center gap-3 p-4 border-b border-white/5">
+          <button
+            onClick={() => setMobileSidebar(true)}
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-all"
+          >
+            <Menu size={20} />
+          </button>
+          <p className="font-bold text-sm text-slate-100">SKYC CRM</p>
+        </div>
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
           {children}
         </div>
       </main>
@@ -50,6 +64,7 @@ export default function App() {
         <Route path="/sales" element={<Layout><Sales /></Layout>} />
         <Route path="/customers" element={<Layout><Customers /></Layout>} />
         <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
+        <Route path="/predictions" element={<Layout><Predictions /></Layout>} />
         <Route path="/settings" element={<Layout><Settings /></Layout>} />
       </Routes>
     </BrowserRouter>

@@ -1,4 +1,4 @@
-# 🛒 Duka CRM — Supermarket Management System
+# 🛒 SKYC CRM — Supermarket Management System
 
 A professional, full-stack Supermarket CRM built with **React + Tailwind CSS** (frontend) and **Node.js + Express** (backend), using **Excel (.xlsx)** files for local data storage.
 

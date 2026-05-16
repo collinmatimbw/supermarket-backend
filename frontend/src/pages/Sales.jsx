@@ -142,8 +142,8 @@ export default function Sales() {
         }
       />
 
-      <div className="glass p-4 mb-4">
-        <div className="relative max-w-md">
+      <div className="glass p-3 sm:p-4 mb-4">
+        <div className="relative w-full sm:max-w-md">
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input className="form-input pl-9" placeholder="Search by product, customer, ID..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
@@ -260,7 +260,7 @@ export default function Sales() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Category</label>
               <select className="form-input" value={form.category}
@@ -343,47 +343,68 @@ export default function Sales() {
       <Modal open={receiptModal} onClose={() => setReceiptModal(false)} title="Sale Receipt" maxWidth="420px">
         {receiptData && (
           <div>
-            <div id="receipt" className="p-5 rounded-xl text-center" style={{ background: '#0a0f1e', border: '1px dashed rgba(255,255,255,0.12)' }}>
-              <div className="mb-4">
-                <p className="font-bold text-lg text-slate-100">DUKA CRM</p>
-                <p className="text-xs text-slate-500">Supermarket Receipt</p>
-                <p className="text-xs text-slate-600 mt-1">{new Date().toLocaleString()}</p>
-              </div>
-              <div className="border-t border-dashed border-white/10 pt-4 mb-4 text-left space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Receipt #</span>
-                  <span className="font-mono text-slate-300">{receiptData.id}</span>
+            <div id="receipt" className="p-6 rounded-xl text-center" style={{ background: '#0a0f1e', border: '1px dashed rgba(255,255,255,0.12)' }}>
+              <img src="/mylogo.png" alt="SKYC CRM" className="w-14 h-14 mx-auto mb-2 rounded-xl" style={{ background: 'linear-gradient(135deg, #059669, #0891b2)' }} />
+              <p className="font-bold text-xl text-slate-100 tracking-wide">SKYC CRM</p>
+              <p className="text-xs text-slate-500 mb-1">Supermarket Management System</p>
+              <p className="text-xs text-slate-600">123 Market Street, Dar es Salaam</p>
+              <p className="text-xs text-slate-600 mb-4">Tel: +255 700 000 000</p>
+
+              <div className="text-xs text-slate-400 mb-4 space-y-1 bg-white/5 rounded-xl p-3">
+                <div className="flex justify-between">
+                  <span>Receipt #</span>
+                  <span className="font-mono text-slate-200 font-semibold">{receiptData.id}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Product</span>
-                  <span className="text-slate-200">{receiptData.productName}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Quantity</span>
-                  <span className="text-slate-200">{receiptData.quantity}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Unit Price</span>
-                  <span className="text-slate-200">{formatCurrency(receiptData.price)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Customer</span>
-                  <span className="text-slate-200">{receiptData.customerName || 'Walk-in'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Date</span>
+                <div className="flex justify-between">
+                  <span>Date</span>
                   <span className="text-slate-200">{formatDate(receiptData.date)}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span>Time</span>
+                  <span className="text-slate-200">{new Date().toLocaleTimeString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Customer</span>
+                  <span className="text-slate-200">{receiptData.customerName || 'Walk-in Customer'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Cashier</span>
+                  <span className="text-slate-200">System</span>
+                </div>
               </div>
-              <div className="border-t border-dashed border-white/10 pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-slate-200">TOTAL</span>
+
+              <div className="border-t border-dashed border-white/10 pt-3 mb-3">
+                <div className="flex items-center text-[11px] font-semibold text-slate-400 uppercase tracking-wider pb-2 border-b border-dashed border-white/8">
+                  <span className="flex-[3] text-left">Item</span>
+                  <span className="w-10 text-center">Qty</span>
+                  <span className="w-16 text-right">Price</span>
+                  <span className="w-20 text-right">Total</span>
+                </div>
+                <div className="flex items-center py-3 text-sm text-slate-200 border-b border-dashed border-white/8">
+                  <span className="flex-[3] text-left font-medium">{receiptData.productName}</span>
+                  <span className="w-10 text-center text-slate-300">{receiptData.quantity}</span>
+                  <span className="w-16 text-right font-mono text-slate-400">{formatCurrency(receiptData.price)}</span>
+                  <span className="w-20 text-right font-mono text-emerald-400 font-bold">{formatCurrency(receiptData.total)}</span>
+                </div>
+              </div>
+
+              <div className="border-t-2 border-double border-white/10 pt-3 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Subtotal</span>
+                  <span className="font-mono text-slate-200">{formatCurrency(Number(receiptData.price) * Number(receiptData.quantity))}</span>
+                </div>
+                <div className="flex justify-between items-center border-t border-dashed border-white/10">
+                  <span className="font-bold text-lg text-slate-100">TOTAL (TZS)</span>
                   <span className="text-2xl font-bold text-emerald-400">{formatCurrency(receiptData.total)}</span>
                 </div>
               </div>
-              <p className="text-xs text-slate-600 mt-4">Thank you for shopping with us!</p>
+
+              <div className="mt-5 pt-3 border-t border-dashed border-white/10">
+                <p className="text-[13px] text-slate-400 font-medium">Thank you for shopping with us!</p>
+                <p className="text-[10px] text-slate-600 mt-1">Goods once sold are not returnable</p>
+              </div>
             </div>
-            <div className="flex gap-3 mt-4">
+            <div className="flex flex-col sm:flex-row gap-3 mt-4">
               <button className="btn-secondary flex-1" onClick={() => setReceiptModal(false)}>Close</button>
               <button className="btn-primary flex-1" onClick={() => window.print()}>
                 <Printer size={14} /> Print

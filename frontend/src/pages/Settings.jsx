@@ -17,7 +17,12 @@ export default function Settings() {
   useEffect(() => { loadInfo(); }, []);
 
   const handleExport = () => {
-    window.open('/api/settings/export', '_blank');
+    const a = document.createElement('a');
+    a.href = 'http://localhost:5000/api/settings/export';
+    a.download = 'supermarket-backup.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     toast.success('Downloading Excel backup...');
   };
 
@@ -102,16 +107,12 @@ export default function Settings() {
       <div className="glass p-5">
         <div className="flex items-center gap-2 mb-4">
           <Info size={15} className="text-violet-400" />
-          <h3 className="font-semibold text-slate-200 text-sm">About Duka CRM</h3>
+          <h3 className="font-semibold text-slate-200 text-sm">About SKYC CRM</h3>
         </div>
         <div className="space-y-2 text-sm text-slate-400">
-          <p>A professional supermarket management system built with React, Tailwind CSS, Node.js, and Excel-based storage.</p>
-          <p>All data is stored locally in Excel (.xlsx) files in the <code className="text-emerald-400 bg-white/5 px-1.5 py-0.5 rounded font-mono text-xs">excel/</code> directory.</p>
-          <div className="flex flex-wrap gap-2 mt-3">
-            {['React 18', 'Tailwind CSS', 'Node.js', 'Express', 'Chart.js', 'XLSX'].map(t => (
-              <span key={t} className="badge badge-blue">{t}</span>
-            ))}
-          </div>
+          <p>Manage your entire supermarket — track <span className="text-slate-300">products</span>, record <span className="text-slate-300">sales</span>, and maintain <span className="text-slate-300">customer</span> profiles all in one place.</p>
+          <p>Monitor <span className="text-slate-300">real-time analytics</span> with revenue trends, category breakdowns, and top-selling products. Get <span className="text-slate-300">AI-powered sales predictions</span> and stock alerts to stay ahead.</p>
+          <p>Export your data as Excel workbooks with an interactive dashboard for offline reporting and analysis.</p>
         </div>
       </div>
     </div>
