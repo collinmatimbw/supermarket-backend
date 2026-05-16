@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://supermarket-backend-g0t0.onrender.com', 'https://supermarket-l2qmj37uq-collin-davis-matimbwis-projects.vercel.app'],
+  origin: ['http://localhost:3000', 'https://supermarket-backend-g0t0.onrender.com', 'https://supermarket-backend-skpm-qilohbfzu.vercel.app'],
   credentials: true,
 }));
 app.use(express.json());
