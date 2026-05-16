@@ -18,7 +18,7 @@ export default function Settings() {
 
   const handleExport = () => {
     const a = document.createElement('a');
-    a.href = 'http://localhost:5000/api/settings/export';
+    a.href = `${api.defaults.baseURL}/settings/export`;
     a.download = 'supermarket-backup.xlsx';
     document.body.appendChild(a);
     a.click();
