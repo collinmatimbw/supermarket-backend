@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://supermarket-crm-nine.vercel.app'],
+  origin: ['http://localhost:3000', 'https://supermarket-1ujw3awfo-collin-davis-matimbwis-projects.vercel.app'],
   credentials: true,
 }));
 app.use(express.json());
