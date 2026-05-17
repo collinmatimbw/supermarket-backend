@@ -75,7 +75,11 @@ async function ensureSheetExists(spreadsheetId, sheetName) {
     
     // Get column count from HEADERS and build range (A, B, C, ... Z)
     const headerList = HEADERS[sheetName];
-    const colCount = headerList ? headerList.length : 9;
+    if (!headerList) {
+      console.error(`❌ No HEADERS defined for sheet: ${sheetName}`);
+      throw new Error(`Sheet "${sheetName}" not configured`);
+    }
+    const colCount = headerList.length;
     const colLetter = String.fromCharCode(64 + colCount); // A=65, so 64+9=I
     const range = `${sheetName}!A1:${colLetter}1`;
     console.log(`📝 Writing ${colCount} headers to ${range}`);
@@ -190,8 +194,11 @@ async function readMultipleSheets(spreadsheetId, sheetNames) {
 async function writeSheet(spreadsheetId, sheetName, data) {
   const s = await initSheets();
   const headers = HEADERS[sheetName];
+  const colCount = headers.length;
+  const colLetter = String.fromCharCode(64 + colCount);
   const values = [headers, ...data.map(row => headers.map(h => String(row[h] || '')))];
-  await s.spreadsheets.values.update({ spreadsheetId, range: `${sheetName}!A:Z`, valueInputOption: 'RAW', requestBody: { values } });
+  console.log(`💾 Writing to ${sheetName}:A:${colLetter}, ${data.length} rows`);
+  await s.spreadsheets.values.update({ spreadsheetId, range: `${sheetName}!A:${colLetter}`, valueInputOption: 'RAW', requestBody: { values } });
   setCache(spreadsheetId, sheetName, data);
 }
 
