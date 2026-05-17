@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, Edit2, Trash2, Package, AlertTriangle, Filter } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Package, AlertTriangle, Filter, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
@@ -18,6 +18,7 @@ export default function Products() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [detailProduct, setDetailProduct] = useState(null);
 
   const load = useCallback(() => {
     api.get('/products').then(r => setProducts(r.data.data)).finally(() => setLoading(false));
@@ -38,6 +39,7 @@ export default function Products() {
     setForm({ name: p.name, category: p.category, buyingPrice: p.buyingPrice, sellingPrice: p.sellingPrice, quantity: p.quantity, barcode: p.barcode, supplier: p.supplier });
     setModalOpen(true);
   };
+  const viewProduct = (p) => setDetailProduct(p);
 
   const handleSave = async () => {
     if (!form.name || !form.category) return toast.error('Name and category required');
@@ -150,6 +152,7 @@ export default function Products() {
                     <td className="text-slate-500 text-xs">{formatDate(p.dateAdded)}</td>
                     <td>
                       <div className="flex gap-2">
+                        <button className="btn-edit" onClick={() => viewProduct(p)} title="View details"><Eye size={12} /></button>
                         <button className="btn-edit" onClick={() => openEdit(p)}><Edit2 size={12} /></button>
                         <button className="btn-danger" onClick={() => handleDelete(p.id, p.name)}><Trash2 size={12} /></button>
                       </div>
@@ -219,6 +222,67 @@ export default function Products() {
             {saving ? 'Saving...' : editing ? 'Update Product' : 'Add Product'}
           </button>
         </div>
+      </Modal>
+
+      {/* Detail Modal */}
+      <Modal open={!!detailProduct} onClose={() => setDetailProduct(null)} title="Product Details">
+        {detailProduct && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-xs text-slate-500 block">Product Name</span>
+                <p className="text-slate-200 font-medium">{detailProduct.name}</p>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">ID</span>
+                <p className="text-slate-200 font-mono text-sm">{detailProduct.id}</p>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">Category</span>
+                <span className="badge badge-purple mt-1 inline-block">{detailProduct.category}</span>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">Barcode</span>
+                <p className="text-slate-200 font-mono text-sm">{detailProduct.barcode || '—'}</p>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">Buying Price</span>
+                <p className="text-slate-200 font-mono">{formatCurrency(detailProduct.buyingPrice)}</p>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">Selling Price</span>
+                <p className="text-emerald-400 font-mono font-semibold">{formatCurrency(detailProduct.sellingPrice)}</p>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">Stock Quantity</span>
+                <div className="flex items-center gap-1.5 mt-1">
+                  {isLowStock(detailProduct.quantity) && <AlertTriangle size={12} className="text-amber-400" />}
+                  <span className={`badge ${Number(detailProduct.quantity) === 0 ? 'badge-red' : isLowStock(detailProduct.quantity) ? 'badge-yellow' : 'badge-green'}`}>
+                    {detailProduct.quantity} units
+                  </span>
+                </div>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">Supplier</span>
+                <p className="text-slate-200">{detailProduct.supplier || '—'}</p>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">Profit Margin</span>
+                <p className="text-sky-400 font-semibold font-mono">
+                  {detailProduct.buyingPrice > 0 ? formatCurrency(Number(detailProduct.sellingPrice) - Number(detailProduct.buyingPrice)) : '—'}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">Date Added</span>
+                <p className="text-slate-200 text-sm">{formatDate(detailProduct.dateAdded)}</p>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button className="btn-secondary flex-1" onClick={() => setDetailProduct(null)}>Close</button>
+              <button className="btn-primary flex-1" onClick={() => { setDetailProduct(null); openEdit(detailProduct); }}>Edit Product</button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
