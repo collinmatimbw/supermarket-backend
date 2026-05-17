@@ -96,7 +96,19 @@ async function readSheet(spreadsheetId, sheetName) {
       const rows = res.data.values || [];
       console.log(`📊 ${sheetName}: ${rows.length} rows`);
       if (rows.length <= 1) { setCache(spreadsheetId, sheetName, []); return []; }
-      const headers = rows[0];
+      const expected = HEADERS[sheetName];
+      if (expected) {
+        const first = rows[0];
+        if (JSON.stringify(first) !== JSON.stringify(expected)) {
+          console.log(`📋 Headers mismatch in ${sheetName}, fixing...`);
+          await s.spreadsheets.values.update({
+            spreadsheetId, range: `${sheetName}!1:1`,
+            valueInputOption: 'RAW',
+            requestBody: { values: [expected] }
+          });
+        }
+      }
+      const headers = expected || rows[0];
       const data = rows.slice(1).map(row => {
         const obj = {};
         headers.forEach((h, i) => { obj[h] = row[i] || ''; });
@@ -132,7 +144,8 @@ async function readMultipleSheets(spreadsheetId, sheetNames) {
       const rows = vr.values || [];
       console.log(`📊 ${sheetName}: ${rows.length} rows`);
       if (rows.length <= 1) { setCache(spreadsheetId, sheetName, []); results[sheetName] = []; return; }
-      const headers = rows[0];
+      const expected = HEADERS[sheetName];
+      const headers = expected || rows[0];
       const data = rows.slice(1).map(row => {
         const obj = {};
         headers.forEach((h, j) => { obj[h] = row[j] || ''; });
