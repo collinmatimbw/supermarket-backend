@@ -51,11 +51,15 @@ function setCache(spreadsheetId, sheetName, data) {
 }
 
 function invalidate(spreadsheetId, sheetName) {
-  if (sheetName) {
-    cache.delete(cacheKey(spreadsheetId, sheetName));
-  } else {
+  const key = cacheKey(spreadsheetId, sheetName);
+  cache.delete(key);
+  pending.delete(key); // Clear pending requests too
+  if (!sheetName) {
     for (const k of cache.keys()) {
-      if (k.startsWith(spreadsheetId + ':')) cache.delete(k);
+      if (k.startsWith(spreadsheetId + ':')) {
+        cache.delete(k);
+        pending.delete(k);
+      }
     }
   }
 }
