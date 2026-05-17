@@ -94,25 +94,60 @@ async function ensureSheetExists(spreadsheetId, sheetName) {
 }
 
 async function readSheet(spreadsheetId, sheetName) {
-  const cached = getFromCache(spreadsheetId, sheetName);
-  if (cached) return cached;
-
+  // Always fetch fresh data to avoid stale cache issues
   const key = cacheKey(spreadsheetId, sheetName);
+  
+  // If there's a pending request, wait for it
   if (pending.has(key)) return pending.get(key);
 
   const promise = (async () => {
     try {
       await ensureSheetExists(spreadsheetId, sheetName);
       const s = await initSheets();
+      console.log(`📖 Reading sheet: ${sheetName}`);
+      
       const res = await s.spreadsheets.values.get({
         spreadsheetId,
         range: `${sheetName}!A:Z`,
       });
+      
       const rows = res.data.values || [];
+      console.log(`📊 Sheet ${sheetName}: ${rows.length} rows found`);
+      
       if (rows.length <= 1) {
         setCache(spreadsheetId, sheetName, []);
         return [];
       }
+      
+      const headers = rows[0];
+      console.log(`📋 Headers: ${headers.join(', ')}`);
+      
+      const data = rows.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = row[i] || ''; });
+        return obj;
+      });
+      
+      console.log(`✅ Parsed ${data.length} records from ${sheetName}`);
+      setCache(spreadsheetId, sheetName, data);
+      return data;
+    } catch (err) {
+      console.error(`❌ Error reading ${sheetName}:`, err.message);
+      if (err.code === 403) {
+        throw new Error(`Permission denied for sheet ${sheetName}. Share the spreadsheet with the service account email as Editor.`);
+      }
+      if (err.code === 429) {
+        throw new Error('Google Sheets API quota exceeded. Please wait a moment and try again.');
+      }
+      throw err;
+    } finally {
+      pending.delete(key);
+    }
+  })();
+
+  pending.set(key, promise);
+  return promise;
+}
       const headers = rows[0];
       const data = rows.slice(1).map(row => {
         const obj = {};
@@ -140,50 +175,50 @@ async function readSheet(spreadsheetId, sheetName) {
 
 async function readMultipleSheets(spreadsheetId, sheetNames) {
   const results = {};
-  const uncached = sheetNames.filter(name => !getFromCache(spreadsheetId, name));
+  
+  // Always fetch fresh data for all requested sheets
+  await Promise.all(sheetNames.map(name => ensureSheetExists(spreadsheetId, name)));
+  const s = await initSheets();
+  const ranges = sheetNames.map(name => `${name}!A:Z`);
+  
+  console.log(`📖 Batch reading sheets: ${sheetNames.join(', ')}`);
+  
+  try {
+    const res = await s.spreadsheets.values.batchGet({
+      spreadsheetId,
+      ranges,
+    });
 
-  if (uncached.length > 0) {
-    await Promise.all(uncached.map(name => ensureSheetExists(spreadsheetId, name)));
-    const s = await initSheets();
-    const ranges = uncached.map(name => `${name}!A:Z`);
-    
-    try {
-      const res = await s.spreadsheets.values.batchGet({
-        spreadsheetId,
-        ranges,
-      });
-
-      res.data.valueRanges.forEach((vr, i) => {
-        const sheetName = uncached[i];
-        const rows = vr.values || [];
-        if (rows.length <= 1) {
-          setCache(spreadsheetId, sheetName, []);
-          results[sheetName] = [];
-        } else {
-          const headers = rows[0];
-          const data = rows.slice(1).map(row => {
-            const obj = {};
-            headers.forEach((h, j) => { obj[h] = row[j] || ''; });
-            return obj;
-          });
-          setCache(spreadsheetId, sheetName, data);
-          results[sheetName] = data;
-        }
-      });
-    } catch (err) {
-      if (err.code === 403) {
-        throw new Error(`Permission denied. Share the spreadsheet with the service account email as Editor.`);
+    res.data.valueRanges.forEach((vr, i) => {
+      const sheetName = sheetNames[i];
+      const rows = vr.values || [];
+      console.log(`📊 Sheet ${sheetName}: ${rows.length} rows found`);
+      
+      if (rows.length <= 1) {
+        setCache(spreadsheetId, sheetName, []);
+        results[sheetName] = [];
+      } else {
+        const headers = rows[0];
+        const data = rows.slice(1).map(row => {
+          const obj = {};
+          headers.forEach((h, j) => { obj[h] = row[j] || ''; });
+          return obj;
+        });
+        console.log(`✅ Parsed ${data.length} records from ${sheetName}`);
+        setCache(spreadsheetId, sheetName, data);
+        results[sheetName] = data;
       }
-      if (err.code === 429) {
-        throw new Error('Google Sheets API quota exceeded. Please wait and try again.');
-      }
-      throw err;
+    });
+  } catch (err) {
+    console.error('❌ Error in batch read:', err.message);
+    if (err.code === 403) {
+      throw new Error(`Permission denied. Share the spreadsheet with the service account email as Editor.`);
     }
+    if (err.code === 429) {
+      throw new Error('Google Sheets API quota exceeded. Please wait and try again.');
+    }
+    throw err;
   }
-
-  sheetNames.forEach(name => {
-    if (!results[name]) results[name] = getFromCache(spreadsheetId, name);
-  });
 
   return results;
 }
