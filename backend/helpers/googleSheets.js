@@ -14,36 +14,27 @@ const HEADERS = {
 
 let sheets;
 const cache = new Map();
-const CACHE_TTL = 120000; // 2 minutes
+const CACHE_TTL = 120000;
 const pending = new Map();
 
 async function initSheets() {
   if (sheets) return sheets;
-  
   try {
     const authClient = new google.auth.GoogleAuth({
       keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS || './service-account.json',
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
     sheets = google.sheets({ version: 'v4', auth: authClient });
-    console.log('✅ Google Sheets initialized successfully');
+    console.log('✅ Google Sheets initialized');
     return sheets;
   } catch (err) {
-    console.error('❌ Failed to initialize Google Sheets:', err.message);
-    throw new Error(`Google Sheets auth failed: ${err.message}`);
+    console.error('❌ Google Sheets init failed:', err.message);
+    throw err;
   }
 }
 
 function cacheKey(spreadsheetId, sheetName) {
   return `${spreadsheetId}:${sheetName}`;
-}
-
-function getFromCache(spreadsheetId, sheetName) {
-  const key = cacheKey(spreadsheetId, sheetName);
-  const entry = cache.get(key);
-  if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data;
-  cache.delete(key);
-  return null;
 }
 
 function setCache(spreadsheetId, sheetName, data) {
@@ -53,9 +44,9 @@ function setCache(spreadsheetId, sheetName, data) {
 function invalidate(spreadsheetId, sheetName) {
   const key = cacheKey(spreadsheetId, sheetName);
   cache.delete(key);
-  pending.delete(key); // Clear pending requests too
+  pending.delete(key);
   if (!sheetName) {
-    for (const k of cache.keys()) {
+    for (const k of [...cache.keys()]) {
       if (k.startsWith(spreadsheetId + ':')) {
         cache.delete(k);
         pending.delete(k);
@@ -83,86 +74,41 @@ async function ensureSheetExists(spreadsheetId, sheetName) {
       });
     }
   } catch (err) {
-    if (err.code === 403) {
-      throw new Error(`Permission denied. Make sure the service account has Editor access to spreadsheet: ${spreadsheetId}`);
-    }
-    if (err.code === 404) {
-      throw new Error(`Spreadsheet not found: ${spreadsheetId}. Check your GOOGLE_SHEET_ID env vars.`);
-    }
+    if (err.code === 403) throw new Error(`Permission denied. Share spreadsheet with service account as Editor.`);
+    if (err.code === 404) throw new Error(`Spreadsheet not found: ${spreadsheetId}`);
     throw err;
   }
 }
 
 async function readSheet(spreadsheetId, sheetName) {
-  // Always fetch fresh data to avoid stale cache issues
   const key = cacheKey(spreadsheetId, sheetName);
-  
-  // If there's a pending request, wait for it
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
+
   if (pending.has(key)) return pending.get(key);
 
   const promise = (async () => {
     try {
       await ensureSheetExists(spreadsheetId, sheetName);
       const s = await initSheets();
-      console.log(`📖 Reading sheet: ${sheetName}`);
-      
-      const res = await s.spreadsheets.values.get({
-        spreadsheetId,
-        range: `${sheetName}!A:Z`,
-      });
-      
+      console.log(`📖 Reading: ${sheetName}`);
+      const res = await s.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:Z` });
       const rows = res.data.values || [];
-      console.log(`📊 Sheet ${sheetName}: ${rows.length} rows found`);
-      
-      if (rows.length <= 1) {
-        setCache(spreadsheetId, sheetName, []);
-        return [];
-      }
-      
-      const headers = rows[0];
-      console.log(`📋 Headers: ${headers.join(', ')}`);
-      
-      const data = rows.slice(1).map(row => {
-        const obj = {};
-        headers.forEach((h, i) => { obj[h] = row[i] || ''; });
-        return obj;
-      });
-      
-      console.log(`✅ Parsed ${data.length} records from ${sheetName}`);
-      setCache(spreadsheetId, sheetName, data);
-      return data;
-    } catch (err) {
-      console.error(`❌ Error reading ${sheetName}:`, err.message);
-      if (err.code === 403) {
-        throw new Error(`Permission denied for sheet ${sheetName}. Share the spreadsheet with the service account email as Editor.`);
-      }
-      if (err.code === 429) {
-        throw new Error('Google Sheets API quota exceeded. Please wait a moment and try again.');
-      }
-      throw err;
-    } finally {
-      pending.delete(key);
-    }
-  })();
-
-  pending.set(key, promise);
-  return promise;
-}
+      console.log(`📊 ${sheetName}: ${rows.length} rows`);
+      if (rows.length <= 1) { setCache(spreadsheetId, sheetName, []); return []; }
       const headers = rows[0];
       const data = rows.slice(1).map(row => {
         const obj = {};
         headers.forEach((h, i) => { obj[h] = row[i] || ''; });
         return obj;
       });
+      console.log(`✅ ${sheetName}: ${data.length} records`);
       setCache(spreadsheetId, sheetName, data);
       return data;
     } catch (err) {
-      if (err.code === 403) {
-        throw new Error(`Permission denied for sheet ${sheetName}. Share the spreadsheet with the service account email as Editor.`);
-      }
-      if (err.code === 429) {
-        throw new Error('Google Sheets API quota exceeded. Please wait a moment and try again.');
-      }
+      console.error(`❌ Read error ${sheetName}:`, err.message);
+      if (err.code === 403) throw new Error(`Permission denied. Share spreadsheet with service account as Editor.`);
+      if (err.code === 429) throw new Error('API quota exceeded. Wait a moment.');
       throw err;
     } finally {
       pending.delete(key);
@@ -175,51 +121,33 @@ async function readSheet(spreadsheetId, sheetName) {
 
 async function readMultipleSheets(spreadsheetId, sheetNames) {
   const results = {};
-  
-  // Always fetch fresh data for all requested sheets
   await Promise.all(sheetNames.map(name => ensureSheetExists(spreadsheetId, name)));
   const s = await initSheets();
   const ranges = sheetNames.map(name => `${name}!A:Z`);
-  
-  console.log(`📖 Batch reading sheets: ${sheetNames.join(', ')}`);
-  
+  console.log(`📖 Batch reading: ${sheetNames.join(', ')}`);
   try {
-    const res = await s.spreadsheets.values.batchGet({
-      spreadsheetId,
-      ranges,
-    });
-
+    const res = await s.spreadsheets.values.batchGet({ spreadsheetId, ranges });
     res.data.valueRanges.forEach((vr, i) => {
       const sheetName = sheetNames[i];
       const rows = vr.values || [];
-      console.log(`📊 Sheet ${sheetName}: ${rows.length} rows found`);
-      
-      if (rows.length <= 1) {
-        setCache(spreadsheetId, sheetName, []);
-        results[sheetName] = [];
-      } else {
-        const headers = rows[0];
-        const data = rows.slice(1).map(row => {
-          const obj = {};
-          headers.forEach((h, j) => { obj[h] = row[j] || ''; });
-          return obj;
-        });
-        console.log(`✅ Parsed ${data.length} records from ${sheetName}`);
-        setCache(spreadsheetId, sheetName, data);
-        results[sheetName] = data;
-      }
+      console.log(`📊 ${sheetName}: ${rows.length} rows`);
+      if (rows.length <= 1) { setCache(spreadsheetId, sheetName, []); results[sheetName] = []; return; }
+      const headers = rows[0];
+      const data = rows.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, j) => { obj[h] = row[j] || ''; });
+        return obj;
+      });
+      console.log(`✅ ${sheetName}: ${data.length} records`);
+      setCache(spreadsheetId, sheetName, data);
+      results[sheetName] = data;
     });
   } catch (err) {
-    console.error('❌ Error in batch read:', err.message);
-    if (err.code === 403) {
-      throw new Error(`Permission denied. Share the spreadsheet with the service account email as Editor.`);
-    }
-    if (err.code === 429) {
-      throw new Error('Google Sheets API quota exceeded. Please wait and try again.');
-    }
+    console.error('❌ Batch read error:', err.message);
+    if (err.code === 403) throw new Error(`Permission denied. Share spreadsheet with service account as Editor.`);
+    if (err.code === 429) throw new Error('API quota exceeded. Wait a moment.');
     throw err;
   }
-
   return results;
 }
 
@@ -227,46 +155,17 @@ async function writeSheet(spreadsheetId, sheetName, data) {
   const s = await initSheets();
   const headers = HEADERS[sheetName];
   const values = [headers, ...data.map(row => headers.map(h => String(row[h] || '')))];
-  
-  try {
-    await s.spreadsheets.values.update({
-      spreadsheetId,
-      range: `${sheetName}!A:Z`,
-      valueInputOption: 'RAW',
-      requestBody: { values }
-    });
-    setCache(spreadsheetId, sheetName, data);
-  } catch (err) {
-    if (err.code === 403) {
-      throw new Error(`Permission denied. Share the spreadsheet with the service account email as Editor.`);
-    }
-    throw err;
-  }
+  await s.spreadsheets.values.update({ spreadsheetId, range: `${sheetName}!A:Z`, valueInputOption: 'RAW', requestBody: { values } });
+  setCache(spreadsheetId, sheetName, data);
 }
 
 async function appendRow(spreadsheetId, sheetName, row) {
   await ensureSheetExists(spreadsheetId, sheetName);
   const s = await initSheets();
   const headers = HEADERS[sheetName];
-  
-  try {
-    await s.spreadsheets.values.append({
-      spreadsheetId,
-      range: `${sheetName}!A:Z`,
-      valueInputOption: 'RAW',
-      requestBody: { values: [headers.map(h => String(row[h] || ''))] }
-    });
-    invalidate(spreadsheetId, sheetName);
-    return row;
-  } catch (err) {
-    if (err.code === 403) {
-      throw new Error(`Permission denied. Share the spreadsheet with the service account email as Editor.`);
-    }
-    if (err.code === 429) {
-      throw new Error('Google Sheets API quota exceeded. Please wait and try again.');
-    }
-    throw err;
-  }
+  await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}!A:Z`, valueInputOption: 'RAW', requestBody: { values: [headers.map(h => String(row[h] || ''))] } });
+  invalidate(spreadsheetId, sheetName);
+  return row;
 }
 
 async function updateRow(spreadsheetId, sheetName, id, updates) {
@@ -297,20 +196,10 @@ async function testConnection(spreadsheetId) {
   try {
     const s = await initSheets();
     await s.spreadsheets.get({ spreadsheetId, fields: 'properties/title' });
-    return { success: true, message: 'Connection successful' };
+    return { success: true, message: 'Connected' };
   } catch (err) {
-    return { 
-      success: false, 
-      message: err.message,
-      hint: err.code === 403 ? 'Share spreadsheet with service account email as Editor' :
-             err.code === 404 ? 'Check spreadsheet ID in env vars' :
-             'Unknown error'
-    };
+    return { success: false, message: err.message };
   }
 }
 
-module.exports = {
-  readSheet, writeSheet, appendRow, updateRow, deleteRow, clearSheet,
-  readMultipleSheets, ensureSheetExists, initSheets, HEADERS, SHEETS, 
-  invalidate, testConnection
-};
+module.exports = { readSheet, writeSheet, appendRow, updateRow, deleteRow, clearSheet, readMultipleSheets, ensureSheetExists, initSheets, HEADERS, SHEETS, invalidate, testConnection };
