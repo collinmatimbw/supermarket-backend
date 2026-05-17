@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 
 const authRouter = require('./routes/auth');
 const productsRouter = require('./routes/products');
@@ -33,28 +32,30 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-function startServer(retries = 5, delay = 2000) {
-  server.listen(PORT, () => {
+let attempts = 10;
+
+function startServer() {
+  const server = app.listen(PORT, () => {
     console.log(`🛒 SKYC CRM Backend running on http://localhost:${PORT}`);
     console.log(`📊 Data stored in Google Sheets`);
-  }).on('error', (err) => {
-    if (err.code === 'EADDRINUSE' && retries > 0) {
-      console.log(`⏳ Port ${PORT} in use, retrying in ${delay}ms... (${retries} attempts left)`);
-      setTimeout(() => startServer(retries - 1, delay), delay);
-    } else {
-      throw err;
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE' && attempts > 0) {
+      console.log(`⏳ Port ${PORT} busy, retrying in 2s... (${attempts} left)`);
+      attempts--;
+      server.close();
+      setTimeout(startServer, 2000);
+    } else if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${PORT} still in use after retries`);
+      process.exit(1);
     }
+  });
+
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Shutting down...');
+    server.close(() => process.exit(0));
   });
 }
 
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
-  server.close(() => process.exit(0));
-});
-
-startServer();
-
-app.listen(PORT, () => {
-  console.log(`\n🛒 Supermarket CRM Backend running on http://localhost:${PORT}`);
-  console.log(`📊 Excel files stored in: ./excel/\n`);
-});
+setTimeout(startServer, 3000);
