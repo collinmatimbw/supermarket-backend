@@ -95,19 +95,48 @@ async function readSheet(spreadsheetId, sheetName) {
       const res = await s.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:Z` });
       const rows = res.data.values || [];
       console.log(`📊 ${sheetName}: ${rows.length} rows`);
-      if (rows.length <= 1) { setCache(spreadsheetId, sheetName, []); return []; }
       const expected = HEADERS[sheetName];
-      if (expected) {
-        const first = rows[0];
-        if (JSON.stringify(first) !== JSON.stringify(expected)) {
-          console.log(`📋 Headers mismatch in ${sheetName}, fixing...`);
-          await s.spreadsheets.values.update({
-            spreadsheetId, range: `${sheetName}!1:1`,
-            valueInputOption: 'RAW',
-            requestBody: { values: [expected] }
-          });
-        }
+      let hasHeaders = false;
+      if (expected && rows.length > 0) {
+        hasHeaders = rows[0].some(v => expected.includes(v));
       }
+      if (!hasHeaders && expected && rows.length > 0) {
+        console.log(`📋 No header row in ${sheetName}, inserting...`);
+        try {
+          const meta = await s.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties)' });
+          const sheet = meta.data.sheets.find(s => s.properties.title === sheetName);
+          if (sheet) {
+            await s.spreadsheets.batchUpdate({
+              spreadsheetId,
+              requestBody: {
+                requests: [{
+                  insertDimension: {
+                    range: { sheetId: sheet.properties.sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 }
+                  }
+                }]
+              }
+            });
+            await s.spreadsheets.values.update({
+              spreadsheetId, range: `${sheetName}!1:1`,
+              valueInputOption: 'RAW',
+              requestBody: { values: [expected] }
+            });
+            console.log(`✅ Header row inserted in ${sheetName}`);
+          }
+        } catch (insErr) {
+          console.error(`⚠️ Could not insert header row: ${insErr.message}`);
+        }
+        const headers = expected;
+        const data = rows.map(row => {
+          const obj = {};
+          headers.forEach((h, i) => { obj[h] = row[i] || ''; });
+          return obj;
+        });
+        console.log(`✅ ${sheetName}: ${data.length} records`);
+        setCache(spreadsheetId, sheetName, data);
+        return data;
+      }
+      if (rows.length <= 1) { setCache(spreadsheetId, sheetName, []); return []; }
       const headers = expected || rows[0];
       const data = rows.slice(1).map(row => {
         const obj = {};
@@ -143,8 +172,23 @@ async function readMultipleSheets(spreadsheetId, sheetNames) {
       const sheetName = sheetNames[i];
       const rows = vr.values || [];
       console.log(`📊 ${sheetName}: ${rows.length} rows`);
-      if (rows.length <= 1) { setCache(spreadsheetId, sheetName, []); results[sheetName] = []; return; }
       const expected = HEADERS[sheetName];
+      let hasHeaders = false;
+      if (expected && rows.length > 0) {
+        hasHeaders = rows[0].some(v => expected.includes(v));
+      }
+      if (!hasHeaders && expected && rows.length > 0) {
+        const data = rows.map(row => {
+          const obj = {};
+          expected.forEach((h, j) => { obj[h] = row[j] || ''; });
+          return obj;
+        });
+        console.log(`✅ ${sheetName}: ${data.length} records (no header row)`);
+        setCache(spreadsheetId, sheetName, data);
+        results[sheetName] = data;
+        return;
+      }
+      if (rows.length <= 1) { setCache(spreadsheetId, sheetName, []); results[sheetName] = []; return; }
       const headers = expected || rows[0];
       const data = rows.slice(1).map(row => {
         const obj = {};
