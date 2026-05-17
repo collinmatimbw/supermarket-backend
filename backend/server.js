@@ -32,6 +32,34 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/test-sheets', async (req, res) => {
+  try {
+    const { testConnection, SHEETS } = require('./helpers/googleSheets');
+    const results = {};
+    
+    for (const [user, sheetId] of Object.entries(SHEETS)) {
+      if (sheetId) {
+        results[user] = await testConnection(sheetId);
+      } else {
+        results[user] = { success: false, message: 'No sheet ID configured' };
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Google Sheets connection test',
+      results,
+      env: {
+        hasSkySheet: !!process.env.GOOGLE_SHEET_ID_SKY,
+        hasLukeloSheet: !!process.env.GOOGLE_SHEET_ID_LUKELO,
+        hasCredentials: !!process.env.GOOGLE_APPLICATION_CREDENTIALS
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 let attempts = 10;
 
 function startServer() {
