@@ -5,15 +5,19 @@ const { v4: uuidv4 } = require('uuid');
 
 router.get('/', async (req, res) => {
   try {
+    console.log(`🔍 GET /sales for user ${req.user.username}`);
     const sales = await readSheet(req.user.spreadsheetId, 'sales');
+    console.log(`📦 Returning ${sales.length} sales`);
     res.json({ success: true, data: sales });
   } catch (err) {
+    console.error(`❌ GET /sales error: ${err.message}`);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
 router.post('/', async (req, res) => {
   try {
+    console.log(`📝 POST /sales for user ${req.user.username}`);
     const { productName, quantity, price, buyingPrice, category, customerName, customerId, supplier } = req.body;
     if (!productName || !quantity || !price) {
       return res.status(400).json({ success: false, message: 'Product name, quantity, and price are required' });
@@ -67,8 +71,10 @@ router.post('/', async (req, res) => {
     };
 
     await appendRow(req.user.spreadsheetId, 'sales', newSale);
+    console.log(`✅ Sale added: ${productName} (${qty} x ${sellPrice})`);
     res.status(201).json({ success: true, data: newSale });
   } catch (err) {
+    console.error(`❌ POST /sales error: ${err.message}`);
     res.status(500).json({ success: false, message: err.message });
   }
 });
