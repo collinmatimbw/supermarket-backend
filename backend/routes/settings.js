@@ -5,18 +5,17 @@ const XLSX = require('xlsx');
 
 router.get('/export', async (req, res) => {
   try {
-    const wb = XLSX.utils.book_new();
     const sheetId = req.user.spreadsheetId;
+    const sheets = require('../helpers/googleSheets');
+    const data = await sheets.readMultipleSheets(sheetId, ['products', 'sales', 'customers', 'suppliers']);
 
-    for (const type of ['products', 'sales', 'customers', 'suppliers']) {
-      const data = await readSheet(sheetId, type);
-      const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    for (const [type, rows] of Object.entries(data)) {
+      const ws = XLSX.utils.json_to_sheet(rows);
       XLSX.utils.book_append_sheet(wb, ws, type.charAt(0).toUpperCase() + type.slice(1));
     }
 
-    const sales = await readSheet(sheetId, 'sales');
-    const products = await readSheet(sheetId, 'products');
-    const customers = await readSheet(sheetId, 'customers');
+    const { sales, products, customers } = data;
     const totalRevenue = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
     const totalProfit = sales.reduce((sum, s) => sum + (Number(s.profit) || 0), 0);
     const margin = totalRevenue ? (totalProfit / totalRevenue) * 100 : 0;
@@ -127,9 +126,9 @@ router.delete('/sales', async (req, res) => {
 
 router.get('/info', async (req, res) => {
   try {
-    const products = await readSheet(req.user.spreadsheetId, 'products');
-    const sales = await readSheet(req.user.spreadsheetId, 'sales');
-    const customers = await readSheet(req.user.spreadsheetId, 'customers');
+    const sheets = require('../helpers/googleSheets');
+    const data = await sheets.readMultipleSheets(req.user.spreadsheetId, ['products', 'sales', 'customers']);
+    const { products, sales, customers } = data;
     res.json({
       success: true,
       data: {

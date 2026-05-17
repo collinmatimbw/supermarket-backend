@@ -85,8 +85,9 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/analytics', async (req, res) => {
   try {
-    const sales = await readSheet(req.user.spreadsheetId, 'sales');
-    const products = await readSheet(req.user.spreadsheetId, 'products');
+    const { sales, products } = await require('../helpers/googleSheets').readMultipleSheets(
+      req.user.spreadsheetId, ['sales', 'products']
+    );
     const period = req.query.period || '7d';
 
     const today = new Date();

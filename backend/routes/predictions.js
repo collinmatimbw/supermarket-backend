@@ -4,8 +4,9 @@ const { readSheet } = require('../helpers/googleSheets');
 
 router.get('/predictions', async (req, res) => {
   try {
-    const sales = await readSheet(req.user.spreadsheetId, 'sales');
-    const products = await readSheet(req.user.spreadsheetId, 'products');
+    const { sales, products } = await require('../helpers/googleSheets').readMultipleSheets(
+      req.user.spreadsheetId, ['sales', 'products']
+    );
 
     if (sales.length === 0) {
       return res.json({
@@ -98,8 +99,9 @@ router.get('/predictions', async (req, res) => {
 
 router.get('/market-analysis', async (req, res) => {
   try {
-    const sales = await readSheet(req.user.spreadsheetId, 'sales');
-    const products = await readSheet(req.user.spreadsheetId, 'products');
+    const { sales, products } = await require('../helpers/googleSheets').readMultipleSheets(
+      req.user.spreadsheetId, ['sales', 'products']
+    );
 
     if (sales.length === 0) {
       return res.json({
