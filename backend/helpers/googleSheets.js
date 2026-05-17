@@ -185,7 +185,9 @@ async function appendRow(spreadsheetId, sheetName, row) {
   await ensureSheetExists(spreadsheetId, sheetName);
   const s = await initSheets();
   const headers = HEADERS[sheetName];
-  await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}!A:Z`, valueInputOption: 'RAW', requestBody: { values: [headers.map(h => String(row[h] || ''))] } });
+  const values = [headers.map(h => String(row[h] || ''))];
+  console.log(`📝 Appending to ${sheetName}:`, values);
+  await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}!A:Z`, valueInputOption: 'RAW', requestBody: { values } });
   invalidate(spreadsheetId, sheetName);
   return row;
 }
