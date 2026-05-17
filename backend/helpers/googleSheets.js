@@ -66,13 +66,15 @@ async function ensureSheetExists(spreadsheetId, sheetName) {
         spreadsheetId,
         requestBody: { requests: [{ addSheet: { properties: { title: sheetName } } }] }
       });
-      await s.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${sheetName}!A1`,
-        valueInputOption: 'RAW',
-        requestBody: { values: [HEADERS[sheetName]] }
-      });
     }
+    // Always ensure row 1 has headers in columns A-I
+    console.log(`📝 Ensuring headers in ${sheetName}`);
+    await s.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${sheetName}!A1:I1`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [HEADERS[sheetName]] }
+    });
   } catch (err) {
     if (err.code === 403) throw new Error(`Permission denied. Share spreadsheet with service account as Editor.`);
     if (err.code === 404) throw new Error(`Spreadsheet not found: ${spreadsheetId}`);
@@ -187,7 +189,8 @@ async function appendRow(spreadsheetId, sheetName, row) {
   const headers = HEADERS[sheetName];
   const values = [headers.map(h => String(row[h] || ''))];
   console.log(`📝 Appending to ${sheetName}:`, values);
-  await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}!A:Z`, valueInputOption: 'RAW', requestBody: { values } });
+  // Explicitly append to columns A-I (first 9 columns) to avoid extending from existing data
+  await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}!A:I`, valueInputOption: 'RAW', requestBody: { values } });
   invalidate(spreadsheetId, sheetName);
   return row;
 }
