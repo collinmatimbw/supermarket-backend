@@ -58,30 +58,39 @@ function invalidate(spreadsheetId, sheetName) {
 async function ensureSheetExists(spreadsheetId, sheetName) {
   const s = await initSheets();
   try {
-    console.log(`🔧 Checking if sheet "${sheetName}" exists...`);
-    const res = await s.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties/title,sheetId)' });
-    const existingSheet = res.data.sheets?.find(s => s.properties.title === sheetName);
+    console.log(`🔧 Checking sheet "${sheetName}" in spreadsheet...`);
+    
+    // Try to get the spreadsheet
+    const spreadsheet = await s.spreadsheets.get({ spreadsheetId });
+    console.log(`📊 Got spreadsheet: ${spreadsheet.data.properties.title}`);
+    
+    // Check if sheet tab exists
+    let existingSheet = spreadsheet.data.sheets?.find(sheet => sheet.properties.title === sheetName);
     
     if (!existingSheet) {
       console.log(`📝 Creating new sheet: ${sheetName}`);
-      await s.spreadsheets.batchUpdate({
+      const result = await s.spreadsheets.batchUpdate({
         spreadsheetId,
         requestBody: { requests: [{ addSheet: { properties: { title: sheetName } } }] }
       });
-      console.log(`✅ Sheet "${sheetName}" created`);
+      // Get the new sheet ID from the result
+      const newSheet = result.data.replies?.[0]?.addSheet?.properties;
+      existingSheet = { properties: newSheet };
+      console.log(`✅ Sheet created with ID: ${newSheet?.sheetId}`);
     } else {
-      console.log(`✅ Sheet "${sheetName}" already exists`);
+      console.log(`✅ Sheet "${sheetName}" exists (ID: ${existingSheet.properties.sheetId})`);
     }
     
-    // Get column count from HEADERS and build range (A, B, C, ... Z)
+    // Now write headers to the first row
     const headerList = HEADERS[sheetName];
     if (!headerList) {
       console.error(`❌ No HEADERS defined for sheet: ${sheetName}`);
       throw new Error(`Sheet "${sheetName}" not configured`);
     }
     const colCount = headerList.length;
-    const colLetter = String.fromCharCode(64 + colCount); // A=65, so 64+9=I
+    const colLetter = String.fromCharCode(64 + colCount);
     const range = `${sheetName}!A1:${colLetter}1`;
+    
     console.log(`📝 Writing ${colCount} headers to ${range}`);
     await s.spreadsheets.values.update({
       spreadsheetId,
@@ -92,6 +101,20 @@ async function ensureSheetExists(spreadsheetId, sheetName) {
     console.log(`✅ Headers written to ${sheetName}`);
   } catch (err) {
     console.error(`❌ ensureSheetExists error for "${sheetName}": ${err.message}`, err.stack);
+    if (err.code === 403) throw new Error(`Permission denied. Share spreadsheet with service account as Editor.`);
+    if (err.code === 404) throw new Error(`Spreadsheet not found: ${spreadsheetId}`);
+    throw err;
+  }
+}
+    // Always ensure row 1 has headers in columns A-I
+    console.log(`📝 Ensuring headers in ${sheetName}`);
+    await s.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${sheetName}!A1:I1`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [HEADERS[sheetName]] }
+    });
+  } catch (err) {
     if (err.code === 403) throw new Error(`Permission denied. Share spreadsheet with service account as Editor.`);
     if (err.code === 404) throw new Error(`Spreadsheet not found: ${spreadsheetId}`);
     throw err;
@@ -194,11 +217,8 @@ async function readMultipleSheets(spreadsheetId, sheetNames) {
 async function writeSheet(spreadsheetId, sheetName, data) {
   const s = await initSheets();
   const headers = HEADERS[sheetName];
-  const colCount = headers.length;
-  const colLetter = String.fromCharCode(64 + colCount);
   const values = [headers, ...data.map(row => headers.map(h => String(row[h] || '')))];
-  console.log(`💾 Writing to ${sheetName}:A:${colLetter}, ${data.length} rows`);
-  await s.spreadsheets.values.update({ spreadsheetId, range: `${sheetName}!A:${colLetter}`, valueInputOption: 'RAW', requestBody: { values } });
+  await s.spreadsheets.values.update({ spreadsheetId, range: `${sheetName}!A:Z`, valueInputOption: 'RAW', requestBody: { values } });
   setCache(spreadsheetId, sheetName, data);
 }
 
@@ -211,7 +231,7 @@ async function appendRow(spreadsheetId, sheetName, row) {
     const colLetter = String.fromCharCode(64 + colCount);
     const values = [headers.map(h => String(row[h] || ''))];
     console.log(`📝 Appending to ${sheetName}:A:${colLetter}`, values);
-    await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}!A:${colLetter}`, valueInputOption: 'RAW', requestBody: { values } });
+    await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}`, valueInputOption: 'RAW', requestBody: { values } });
     invalidate(spreadsheetId, sheetName);
     return row;
   } catch (err) {
