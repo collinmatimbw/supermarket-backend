@@ -2,12 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+const authRouter = require('./routes/auth');
 const productsRouter = require('./routes/products');
 const salesRouter = require('./routes/sales');
 const customersRouter = require('./routes/customers');
 const suppliersRouter = require('./routes/suppliers');
 const settingsRouter = require('./routes/settings');
 const predictionsRouter = require('./routes/predictions');
+const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -19,15 +21,21 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api/products', productsRouter);
-app.use('/api/sales', salesRouter);
-app.use('/api/customers', customersRouter);
-app.use('/api/suppliers', suppliersRouter);
-app.use('/api/settings', settingsRouter);
-app.use('/api/predictions', predictionsRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/products', authMiddleware, productsRouter);
+app.use('/api/sales', authMiddleware, salesRouter);
+app.use('/api/customers', authMiddleware, customersRouter);
+app.use('/api/suppliers', authMiddleware, suppliersRouter);
+app.use('/api/settings', authMiddleware, settingsRouter);
+app.use('/api/predictions', authMiddleware, predictionsRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.listen(PORT, () => {
+  console.log(`🛒 SKYC CRM Backend running on http://localhost:${PORT}`);
+  console.log(`📊 Data stored in Google Sheets`);
 });
 
 app.listen(PORT, () => {

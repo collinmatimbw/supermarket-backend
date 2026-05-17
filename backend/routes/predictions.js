@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { readExcel } = require('../helpers/excel');
+const { readSheet } = require('../helpers/googleSheets');
 
-router.get('/predictions', (req, res) => {
+router.get('/predictions', async (req, res) => {
   try {
-    const sales = readExcel('sales');
-    const products = readExcel('products');
+    const sales = await readSheet(req.user.spreadsheetId, 'sales');
+    const products = await readSheet(req.user.spreadsheetId, 'products');
 
     if (sales.length === 0) {
       return res.json({
@@ -96,10 +96,10 @@ router.get('/predictions', (req, res) => {
   }
 });
 
-router.get('/market-analysis', (req, res) => {
+router.get('/market-analysis', async (req, res) => {
   try {
-    const sales = readExcel('sales');
-    const products = readExcel('products');
+    const sales = await readSheet(req.user.spreadsheetId, 'sales');
+    const products = await readSheet(req.user.spreadsheetId, 'products');
 
     if (sales.length === 0) {
       return res.json({

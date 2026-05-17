@@ -7,9 +7,22 @@ const api = axios.create({
   timeout: 15000,
 });
 
+api.interceptors.request.use(config => {
+  const auth = localStorage.getItem('skyc_auth');
+  if (auth) {
+    const { token } = JSON.parse(auth);
+    config.headers.Authorization = `Basic ${token}`;
+  }
+  return config;
+});
+
 api.interceptors.response.use(
   res => res,
   err => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('skyc_auth');
+      window.location.href = '/login';
+    }
     const msg = err.response?.data?.message || 'Network error';
     return Promise.reject(new Error(msg));
   }

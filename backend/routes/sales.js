@@ -1,18 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { readExcel, appendRow, updateRow, deleteRow, findProductByName, findOrCreateProduct } = require('../helpers/excel');
+const { readSheet, appendRow, updateRow, deleteRow } = require('../helpers/googleSheets');
 const { v4: uuidv4 } = require('uuid');
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const sales = readExcel('sales');
+    const sales = await readSheet(req.user.spreadsheetId, 'sales');
     res.json({ success: true, data: sales });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { productName, quantity, price, buyingPrice, category, customerName, customerId, supplier } = req.body;
     if (!productName || !quantity || !price) {
@@ -24,7 +24,8 @@ router.post('/', (req, res) => {
     const buyPrice = Number(buyingPrice) || 0;
     const total = sellPrice * qty;
 
-    const existingProduct = findProductByName(productName);
+    const products = await readSheet(req.user.spreadsheetId, 'products');
+    const existingProduct = products.find(p => p.name.toLowerCase() === productName.toLowerCase());
 
     let productId;
     if (existingProduct) {
@@ -32,9 +33,20 @@ router.post('/', (req, res) => {
       if (existingProduct.quantity < qty) {
         return res.status(400).json({ success: false, message: `Insufficient stock for "${productName}" (${existingProduct.quantity} available)` });
       }
-      updateRow('products', productId, { quantity: existingProduct.quantity - qty });
+      await updateRow(req.user.spreadsheetId, 'products', productId, { quantity: existingProduct.quantity - qty });
     } else {
-      const newProduct = findOrCreateProduct(productName, category || 'General', sellPrice, buyPrice, supplier || '');
+      const newProduct = {
+        id: 'P' + uuidv4().slice(0, 8).toUpperCase(),
+        name: productName,
+        category: category || 'General',
+        buyingPrice: buyPrice,
+        sellingPrice: sellPrice,
+        quantity: 0,
+        barcode: '',
+        supplier: supplier || '',
+        dateAdded: new Date().toISOString().split('T')[0],
+      };
+      await appendRow(req.user.spreadsheetId, 'products', newProduct);
       productId = newProduct.id;
     }
 
@@ -54,16 +66,16 @@ router.post('/', (req, res) => {
       customerName: customerName || 'Walk-in Customer',
     };
 
-    appendRow('sales', newSale);
+    await appendRow(req.user.spreadsheetId, 'sales', newSale);
     res.status(201).json({ success: true, data: newSale });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const deleted = deleteRow('sales', req.params.id);
+    const deleted = await deleteRow(req.user.spreadsheetId, 'sales', req.params.id);
     if (!deleted) return res.status(404).json({ success: false, message: 'Sale not found' });
     res.json({ success: true, message: 'Sale deleted' });
   } catch (err) {
@@ -71,10 +83,10 @@ router.delete('/:id', (req, res) => {
   }
 });
 
-router.get('/analytics', (req, res) => {
+router.get('/analytics', async (req, res) => {
   try {
-    const sales = readExcel('sales');
-    const products = readExcel('products');
+    const sales = await readSheet(req.user.spreadsheetId, 'sales');
+    const products = await readSheet(req.user.spreadsheetId, 'products');
     const period = req.query.period || '7d';
 
     const today = new Date();
@@ -90,7 +102,6 @@ router.get('/analytics', (req, res) => {
 
     const filtered = sales.filter(s => new Date(s.date) >= startDate);
 
-    // Group by day or month based on period length
     const grouped = {};
     const isLongRange = period === '1y' || period === 'all';
     filtered.forEach(s => {

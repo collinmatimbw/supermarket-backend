@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Menu } from 'lucide-react';
 import Sidebar from './components/Sidebar';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Sales from './pages/Sales';
@@ -11,6 +12,12 @@ import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import Predictions from './pages/Predictions';
 
+function ProtectedRoute({ children }) {
+  const auth = localStorage.getItem('skyc_auth');
+  if (!auth) return <Navigate to="/login" replace />;
+  return children;
+}
+
 function Layout({ children }) {
   const [mobileSidebar, setMobileSidebar] = useState(false);
 
@@ -18,10 +25,8 @@ function Layout({ children }) {
     <div className="flex min-h-screen">
       <Sidebar mobileOpen={mobileSidebar} onToggleMobile={() => setMobileSidebar(!mobileSidebar)} />
       <main className="flex-1 overflow-auto relative z-10">
-        {/* Top gradient accent */}
         <div className="fixed top-0 left-0 right-0 h-px z-20"
           style={{ background: 'linear-gradient(90deg, transparent, rgba(110,231,183,0.3), rgba(56,189,248,0.3), transparent)' }} />
-        {/* Mobile header */}
         <div className="lg:hidden flex items-center gap-3 p-4 border-b border-white/5">
           <button
             onClick={() => setMobileSidebar(true)}
@@ -40,6 +45,8 @@ function Layout({ children }) {
 }
 
 export default function App() {
+  const auth = localStorage.getItem('skyc_auth');
+
   return (
     <BrowserRouter>
       <Toaster
@@ -59,13 +66,14 @@ export default function App() {
         }}
       />
       <Routes>
-        <Route path="/" element={<Layout><Dashboard /></Layout>} />
-        <Route path="/products" element={<Layout><Products /></Layout>} />
-        <Route path="/sales" element={<Layout><Sales /></Layout>} />
-        <Route path="/customers" element={<Layout><Customers /></Layout>} />
-        <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
-        <Route path="/predictions" element={<Layout><Predictions /></Layout>} />
-        <Route path="/settings" element={<Layout><Settings /></Layout>} />
+        <Route path="/login" element={auth ? <Navigate to="/" replace /> : <Login />} />
+        <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+        <Route path="/products" element={<ProtectedRoute><Layout><Products /></Layout></ProtectedRoute>} />
+        <Route path="/sales" element={<ProtectedRoute><Layout><Sales /></Layout></ProtectedRoute>} />
+        <Route path="/customers" element={<ProtectedRoute><Layout><Customers /></Layout></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><Layout><Analytics /></Layout></ProtectedRoute>} />
+        <Route path="/predictions" element={<ProtectedRoute><Layout><Predictions /></Layout></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );
