@@ -230,8 +230,8 @@ async function appendRow(spreadsheetId, sheetName, row) {
     const colCount = headers.length;
     const colLetter = String.fromCharCode(64 + colCount);
     const values = [headers.map(h => String(row[h] || ''))];
-    console.log(`📝 Appending to ${sheetName}:A:${colLetter}`, values);
-    await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}`, valueInputOption: 'RAW', requestBody: { values } });
+    console.log(`📝 Appending to ${sheetName}:A1:${colLetter}1`, values);
+    await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}!A1:${colLetter}1`, valueInputOption: 'RAW', requestBody: { values } });
     invalidate(spreadsheetId, sheetName);
     return row;
   } catch (err) {
