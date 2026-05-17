@@ -33,18 +33,26 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`🛒 SKYC CRM Backend running on http://localhost:${PORT}`);
-  console.log(`📊 Data stored in Google Sheets`);
-});
+function startServer(retries = 5, delay = 2000) {
+  server.listen(PORT, () => {
+    console.log(`🛒 SKYC CRM Backend running on http://localhost:${PORT}`);
+    console.log(`📊 Data stored in Google Sheets`);
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE' && retries > 0) {
+      console.log(`⏳ Port ${PORT} in use, retrying in ${delay}ms... (${retries} attempts left)`);
+      setTimeout(() => startServer(retries - 1, delay), delay);
+    } else {
+      throw err;
+    }
+  });
+}
 
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...');
-  server.close(() => {
-    console.log('Server closed.');
-    process.exit(0);
-  });
+  server.close(() => process.exit(0));
 });
+
+startServer();
 
 app.listen(PORT, () => {
   console.log(`\n🛒 Supermarket CRM Backend running on http://localhost:${PORT}`);
