@@ -91,7 +91,7 @@ async function ensureSheetExists(spreadsheetId, sheetName) {
     });
     console.log(`✅ Headers written to ${sheetName}`);
   } catch (err) {
-    console.error(`❌ ensureSheetExists error for "${sheetName}": ${err.message}`);
+    console.error(`❌ ensureSheetExists error for "${sheetName}": ${err.message}`, err.stack);
     if (err.code === 403) throw new Error(`Permission denied. Share spreadsheet with service account as Editor.`);
     if (err.code === 404) throw new Error(`Spreadsheet not found: ${spreadsheetId}`);
     throw err;
@@ -203,16 +203,21 @@ async function writeSheet(spreadsheetId, sheetName, data) {
 }
 
 async function appendRow(spreadsheetId, sheetName, row) {
-  await ensureSheetExists(spreadsheetId, sheetName);
-  const s = await initSheets();
-  const headers = HEADERS[sheetName];
-  const colCount = headers.length;
-  const colLetter = String.fromCharCode(64 + colCount);
-  const values = [headers.map(h => String(row[h] || ''))];
-  console.log(`📝 Appending to ${sheetName}:A:${colLetter}`, values);
-  await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}!A:${colLetter}`, valueInputOption: 'RAW', requestBody: { values } });
-  invalidate(spreadsheetId, sheetName);
-  return row;
+  try {
+    await ensureSheetExists(spreadsheetId, sheetName);
+    const s = await initSheets();
+    const headers = HEADERS[sheetName];
+    const colCount = headers.length;
+    const colLetter = String.fromCharCode(64 + colCount);
+    const values = [headers.map(h => String(row[h] || ''))];
+    console.log(`📝 Appending to ${sheetName}:A:${colLetter}`, values);
+    await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}!A:${colLetter}`, valueInputOption: 'RAW', requestBody: { values } });
+    invalidate(spreadsheetId, sheetName);
+    return row;
+  } catch (err) {
+    console.error(`❌ appendRow error: ${err.message}`, err.stack);
+    throw err;
+  }
 }
 
 async function updateRow(spreadsheetId, sheetName, id, updates) {
