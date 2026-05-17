@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, Edit2, Trash2, Package, AlertTriangle, Filter, Eye } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Package, AlertTriangle, Filter, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
@@ -72,15 +72,26 @@ export default function Products() {
       return;
     }
     
-    const confirmPerm = window.confirm(`Permanently delete "${name}" from both?`);
-    if (confirmPerm) {
-      try {
-        await api.delete(`/products/${id}`);
-        toast.success('Permanently deleted');
-        load();
-      } catch (e) {
-        toast.error(e.message);
+const confirmPerm = window.confirm(`Permanently delete "${name}" from both?`);
+      if (confirmPerm) {
+        try {
+          await api.delete(`/products/${id}`);
+          toast.success('Permanently deleted');
+          load();
+        } catch (e) {
+          toast.error(e.message);
+        }
       }
+    }
+  };
+
+  const toggleVisibility = async (id, name, currentlyVisible) => {
+    try {
+      await api.put(`/products/${id}/visible`, { visible: !currentlyVisible });
+      toast.success(currentlyVisible ? 'Product hidden from web' : 'Product shown on web');
+      load();
+    } catch (e) {
+      toast.error(e.message);
     }
   };
 
@@ -165,6 +176,7 @@ export default function Products() {
                     <td>
                       <div className="flex gap-2">
                         <button className="btn-edit" onClick={() => viewProduct(p)} title="View details"><Eye size={12} /></button>
+                        <button className="btn-edit" onClick={() => toggleVisibility(p.id, p.name, true)} title="Hide from web"><EyeOff size={12} /></button>
                         <button className="btn-edit" onClick={() => openEdit(p)}><Edit2 size={12} /></button>
                         <button className="btn-danger" onClick={() => handleDelete(p.id, p.name)}><Trash2 size={12} /></button>
                       </div>

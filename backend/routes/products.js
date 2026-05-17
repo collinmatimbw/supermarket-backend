@@ -7,8 +7,10 @@ router.get('/', async (req, res) => {
   try {
     console.log(`🔍 GET /products for user ${req.user.username}, sheet: ${req.user.spreadsheetId}`);
     const products = await readSheet(req.user.spreadsheetId, 'products');
-    console.log(`📦 Returning ${products.length} products`);
-    res.json({ success: true, data: products });
+    // Filter out hidden products (visible !== 'false')
+    const visibleProducts = products.filter(p => p.visible !== 'false');
+    console.log(`📦 Returning ${visibleProducts.length} visible products (${products.length} total)`);
+    res.json({ success: true, data: visibleProducts });
   } catch (err) {
     console.error(`❌ GET /products error: ${err.message}`);
     res.status(500).json({ success: false, message: err.message });
@@ -36,6 +38,7 @@ router.post('/', async (req, res) => {
       barcode: barcode || '',
       supplier: supplier || '',
       dateAdded: new Date().toISOString().split('T')[0],
+      visible: 'true',
     };
     await appendRow(req.user.spreadsheetId, 'products', newProduct);
     console.log(`✅ Product added: ${newProduct.name} (${newProduct.id})`);
@@ -66,6 +69,23 @@ router.delete('/:id', async (req, res) => {
     const deleted = await deleteRow(req.user.spreadsheetId, 'products', req.params.id);
     if (!deleted) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, message: 'Product deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Toggle product visibility
+router.put('/:id/visible', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { visible } = req.body;
+    const products = await readSheet(req.user.spreadsheetId, 'products');
+    const product = products.find(p => p.id === id);
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+    
+    const newVisibility = visible === false ? 'false' : 'true';
+    const updated = await updateRow(req.user.spreadsheetId, 'products', id, { visible: newVisibility });
+    res.json({ success: true, data: updated, message: visible === false ? 'Product hidden from web' : 'Product shown on web' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
