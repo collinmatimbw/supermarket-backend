@@ -205,10 +205,17 @@ async function updateRow(spreadsheetId, sheetName, id, updates) {
 }
 
 async function deleteRow(spreadsheetId, sheetName, id) {
+  console.log(`🗑️ deleteRow: looking for id="${id}" in sheet "${sheetName}"`);
   const data = await readSheet(spreadsheetId, sheetName);
+  console.log(`🗑️ deleteRow: found ${data.length} products, ids: ${data.map(p => p.id).join(', ')}`);
   const filtered = data.filter(r => r.id !== id);
-  if (filtered.length === data.length) return false;
+  console.log(`🗑️ deleteRow: after filter ${filtered.length} products remain`);
+  if (filtered.length === data.length) {
+    console.log(`🗑️ deleteRow: Product not found!`);
+    return false;
+  }
   await writeSheet(spreadsheetId, sheetName, filtered);
+  console.log(`🗑️ deleteRow: Done, rewrote sheet with ${filtered.length} products`);
   return true;
 }
 
