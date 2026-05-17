@@ -58,24 +58,32 @@ function invalidate(spreadsheetId, sheetName) {
 async function ensureSheetExists(spreadsheetId, sheetName) {
   const s = await initSheets();
   try {
-    const res = await s.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties/title)' });
-    const exists = res.data.sheets?.some(s => s.properties.title === sheetName);
-    if (!exists) {
-      console.log(`📝 Creating sheet: ${sheetName}`);
+    console.log(`🔧 Checking if sheet "${sheetName}" exists...`);
+    const res = await s.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties/title,sheetId)' });
+    const existingSheet = res.data.sheets?.find(s => s.properties.title === sheetName);
+    
+    if (!existingSheet) {
+      console.log(`📝 Creating new sheet: ${sheetName}`);
       await s.spreadsheets.batchUpdate({
         spreadsheetId,
         requestBody: { requests: [{ addSheet: { properties: { title: sheetName } } }] }
       });
+      console.log(`✅ Sheet "${sheetName}" created`);
+    } else {
+      console.log(`✅ Sheet "${sheetName}" already exists`);
     }
+    
     // Always ensure row 1 has headers in columns A-I
-    console.log(`📝 Ensuring headers in ${sheetName}`);
+    console.log(`📝 Writing headers to ${sheetName}:A1:I1`);
     await s.spreadsheets.values.update({
       spreadsheetId,
       range: `${sheetName}!A1:I1`,
       valueInputOption: 'RAW',
       requestBody: { values: [HEADERS[sheetName]] }
     });
+    console.log(`✅ Headers written to ${sheetName}`);
   } catch (err) {
+    console.error(`❌ ensureSheetExists error for "${sheetName}": ${err.message}`);
     if (err.code === 403) throw new Error(`Permission denied. Share spreadsheet with service account as Editor.`);
     if (err.code === 404) throw new Error(`Spreadsheet not found: ${spreadsheetId}`);
     throw err;
