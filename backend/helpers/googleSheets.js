@@ -73,13 +73,17 @@ async function ensureSheetExists(spreadsheetId, sheetName) {
       console.log(`✅ Sheet "${sheetName}" already exists`);
     }
     
-    // Always ensure row 1 has headers in columns A-I
-    console.log(`📝 Writing headers to ${sheetName}:A1:I1`);
+    // Get column count from HEADERS and build range (A, B, C, ... Z)
+    const headerList = HEADERS[sheetName];
+    const colCount = headerList ? headerList.length : 9;
+    const colLetter = String.fromCharCode(64 + colCount); // A=65, so 64+9=I
+    const range = `${sheetName}!A1:${colLetter}1`;
+    console.log(`📝 Writing ${colCount} headers to ${range}`);
     await s.spreadsheets.values.update({
       spreadsheetId,
-      range: `${sheetName}!A1:I1`,
+      range: range,
       valueInputOption: 'RAW',
-      requestBody: { values: [HEADERS[sheetName]] }
+      requestBody: { values: [headerList] }
     });
     console.log(`✅ Headers written to ${sheetName}`);
   } catch (err) {
@@ -195,10 +199,11 @@ async function appendRow(spreadsheetId, sheetName, row) {
   await ensureSheetExists(spreadsheetId, sheetName);
   const s = await initSheets();
   const headers = HEADERS[sheetName];
+  const colCount = headers.length;
+  const colLetter = String.fromCharCode(64 + colCount);
   const values = [headers.map(h => String(row[h] || ''))];
-  console.log(`📝 Appending to ${sheetName}:`, values);
-  // Explicitly append to columns A-I (first 9 columns) to avoid extending from existing data
-  await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}!A:I`, valueInputOption: 'RAW', requestBody: { values } });
+  console.log(`📝 Appending to ${sheetName}:A:${colLetter}`, values);
+  await s.spreadsheets.values.append({ spreadsheetId, range: `${sheetName}!A:${colLetter}`, valueInputOption: 'RAW', requestBody: { values } });
   invalidate(spreadsheetId, sheetName);
   return row;
 }
