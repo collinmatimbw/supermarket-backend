@@ -106,20 +106,6 @@ async function ensureSheetExists(spreadsheetId, sheetName) {
     throw err;
   }
 }
-    // Always ensure row 1 has headers in columns A-I
-    console.log(`📝 Ensuring headers in ${sheetName}`);
-    await s.spreadsheets.values.update({
-      spreadsheetId,
-      range: `${sheetName}!A1:I1`,
-      valueInputOption: 'RAW',
-      requestBody: { values: [HEADERS[sheetName]] }
-    });
-  } catch (err) {
-    if (err.code === 403) throw new Error(`Permission denied. Share spreadsheet with service account as Editor.`);
-    if (err.code === 404) throw new Error(`Spreadsheet not found: ${spreadsheetId}`);
-    throw err;
-  }
-}
 
 async function readSheet(spreadsheetId, sheetName) {
   const key = cacheKey(spreadsheetId, sheetName);
