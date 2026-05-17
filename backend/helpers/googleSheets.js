@@ -103,7 +103,10 @@ async function readSheet(spreadsheetId, sheetName) {
       }
 
       // Detect if row 1 is a header row (contains expected column names)
-      const hasHeaderRow = rows[0].some(v => expected.includes(v));
+      const firstRow = rows[0] || [];
+      console.log(`🔍 First row: ${JSON.stringify(firstRow)}`);
+      const hasHeaderRow = firstRow.some(v => expected.includes(v));
+      console.log(`🔍 Has header row: ${hasHeaderRow}, Expected headers: ${expected.join(', ')}`);
       const dataRows = hasHeaderRow ? rows.slice(1) : rows;
 
       const data = dataRows.map(row => {
