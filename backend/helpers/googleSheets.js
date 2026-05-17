@@ -203,8 +203,12 @@ async function readMultipleSheets(spreadsheetId, sheetNames) {
 async function writeSheet(spreadsheetId, sheetName, data) {
   const s = await initSheets();
   const headers = HEADERS[sheetName];
+  const colCount = headers.length;
+  const colLetter = String.fromCharCode(64 + colCount);
+  const range = `${sheetName}!A1:${colLetter}${data.length + 1}`;
   const values = [headers, ...data.map(row => headers.map(h => String(row[h] || '')))];
-  await s.spreadsheets.values.update({ spreadsheetId, range: `${sheetName}!A:Z`, valueInputOption: 'RAW', requestBody: { values } });
+  console.log(`📝 writeSheet: writing ${data.length} rows to ${range}`);
+  await s.spreadsheets.values.update({ spreadsheetId, range, valueInputOption: 'RAW', requestBody: { values } });
   setCache(spreadsheetId, sheetName, data);
 }
 
@@ -237,6 +241,8 @@ async function deleteRow(spreadsheetId, sheetName, id) {
   console.log(`🗑️ deleteRow: looking for id="${id}" in sheet "${sheetName}"`);
   const data = await readSheet(spreadsheetId, sheetName);
   console.log(`🗑️ deleteRow: found ${data.length} products, ids: ${data.map(p => p.id).join(', ')}`);
+  console.log(`🗑️ deleteRow: looking for id "${id}" (type: ${typeof id})`);
+  data.forEach(p => console.log(`🗑️ product id: "${p.id}" (type: ${typeof p.id})`));
   const filtered = data.filter(r => r.id !== id);
   console.log(`🗑️ deleteRow: after filter ${filtered.length} products remain`);
   if (filtered.length === data.length) {
