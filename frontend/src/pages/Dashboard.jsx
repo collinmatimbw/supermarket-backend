@@ -9,23 +9,25 @@ import StatCard from '../components/StatCard';
 import { LoadingState } from '../components/LoadingState';
 import api from '../utils/api';
 import { formatCurrency, formatDate, isLowStock } from '../utils/helpers';
+import { useLanguage } from '../context/LanguageContext';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler);
 
-const PERIODS = [
-  { key: '7d', label: '7 Days' },
-  { key: '30d', label: '30 Days' },
-  { key: '90d', label: '90 Days' },
-  { key: '1y', label: '1 Year' },
-  { key: 'all', label: 'All Time' },
-];
-
 export default function Dashboard() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('7d');
+
+  const PERIODS = [
+    { key: '7d', label: `7 ${t('days')}` },
+    { key: '30d', label: `30 ${t('days')}` },
+    { key: '90d', label: `90 ${t('days')}` },
+    { key: '1y', label: `1 ${t('days')}` },
+    { key: 'all', label: t('allTime') },
+  ];
 
   useEffect(() => {
     setLoading(true);
@@ -133,16 +135,16 @@ export default function Dashboard() {
     cutout: '68%',
   };
 
-  if (loading) return <LoadingState message="Loading dashboard..." />;
+  if (loading) return <LoadingState message={`${t('loading')}...`} />;
 
   return (
     <div className="animate-fade-in">
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Total Products" value={products.length} subtitle="In inventory" icon={Package} color="blue" />
-        <StatCard title="Total Sales" value={sales.length} subtitle="Transactions" icon={ShoppingCart} color="green" />
-        <StatCard title="Revenue" value={formatCurrency(totalRevenue)} subtitle="All time" icon={DollarSign} color="yellow" />
-        <StatCard title="Low Stock" value={lowStockCount} subtitle={`≤10 units`} icon={AlertTriangle} color="red" />
+        <StatCard title={t('totalProducts')} value={products.length} subtitle={t('inInventory')} icon={Package} color="blue" />
+        <StatCard title={t('totalSales')} value={sales.length} subtitle={t('transactions')} icon={ShoppingCart} color="green" />
+        <StatCard title={t('revenue')} value={formatCurrency(totalRevenue)} subtitle={t('allTime')} icon={DollarSign} color="yellow" />
+        <StatCard title={t('lowStock')} value={lowStockCount} subtitle={`≤10 ${t('unitsOrLess')}`} icon={AlertTriangle} color="red" />
       </div>
 
       {/* Charts Row */}
@@ -151,8 +153,8 @@ export default function Dashboard() {
         <div className="glass p-5 lg:col-span-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <div>
-              <h3 className="font-semibold text-slate-200 text-sm">Revenue Trend</h3>
-              <p className="text-xs text-slate-500 mt-0.5">{analytics?.dailyRevenue?.length || 0} data points</p>
+              <h3 className="font-semibold text-slate-200 text-sm">{t('revenueTrend')}</h3>
+              <p className="text-xs text-slate-500 mt-0.5">{analytics?.dailyRevenue?.length || 0} {t('dataPoints')}</p>
             </div>
             <div className="flex flex-wrap items-center gap-1">
               {PERIODS.map(p => (
@@ -172,7 +174,7 @@ export default function Dashboard() {
           </div>
           <div style={{ height: 200 }}>
             {lineData ? <Line data={lineData} options={chartOptions} /> : (
-              <div className="flex items-center justify-center h-full text-slate-500 text-sm">No data yet</div>
+              <div className="flex items-center justify-center h-full text-slate-500 text-sm">{t('noDataYet')}</div>
             )}
           </div>
         </div>
@@ -180,12 +182,12 @@ export default function Dashboard() {
         {/* Doughnut Chart */}
         <div className="glass p-5">
           <div className="mb-4">
-            <h3 className="font-semibold text-slate-200 text-sm">Revenue by Category</h3>
-            <p className="text-xs text-slate-500 mt-0.5">All time</p>
+            <h3 className="font-semibold text-slate-200 text-sm">{t('revenueByCategory')}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">{t('allTime')}</p>
           </div>
           <div style={{ height: 220 }}>
             {doughnutData ? <Doughnut data={doughnutData} options={doughnutOptions} /> : (
-              <div className="flex items-center justify-center h-full text-slate-500 text-sm">No data yet</div>
+              <div className="flex items-center justify-center h-full text-slate-500 text-sm">{t('noDataYet')}</div>
             )}
           </div>
         </div>
@@ -195,19 +197,19 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Recent Sales */}
         <div className="glass p-5 lg:col-span-2">
-          <h3 className="font-semibold text-slate-200 text-sm mb-4">Recent Sales</h3>
+          <h3 className="font-semibold text-slate-200 text-sm mb-4">{t('recentSales')}</h3>
           {recentSales.length === 0 ? (
-            <p className="text-slate-500 text-sm text-center py-8">No sales recorded yet</p>
+            <p className="text-slate-500 text-sm text-center py-8">{t('noSalesYet')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Product</th>
-                    <th>Customer</th>
-                    <th>Qty</th>
-                    <th>Total</th>
-                    <th>Date</th>
+                    <th>{t('product')}</th>
+                    <th>{t('customer')}</th>
+                    <th>{t('qty')}</th>
+                    <th>{t('total')}</th>
+                    <th>{t('date')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -230,10 +232,10 @@ export default function Dashboard() {
         <div className="glass p-5">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle size={15} className="text-amber-400" />
-            <h3 className="font-semibold text-slate-200 text-sm">Low Stock Alerts</h3>
+            <h3 className="font-semibold text-slate-200 text-sm">{t('lowStockAlerts')}</h3>
           </div>
           {products.filter(p => isLowStock(p.quantity)).length === 0 ? (
-            <p className="text-slate-500 text-sm text-center py-8">✓ All products well stocked</p>
+            <p className="text-slate-500 text-sm text-center py-8">✓ {t('allProductsWellStocked')}</p>
           ) : (
             <div className="space-y-2">
               {products.filter(p => isLowStock(p.quantity)).map(p => (
@@ -244,7 +246,7 @@ export default function Dashboard() {
                     <p className="text-xs text-slate-500 mt-0.5">{p.category}</p>
                   </div>
                   <span className={`badge ${Number(p.quantity) === 0 ? 'badge-red' : 'badge-yellow'}`}>
-                    {p.quantity} left
+                    {p.quantity} {t('left')}
                   </span>
                 </div>
               ))}
