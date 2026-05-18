@@ -6,6 +6,24 @@ const Sale = require('../models/Sale');
 const Customer = require('../models/Customer');
 const Supplier = require('../models/Supplier');
 
+// Seed admin user (run once)
+router.post('/seed-admin', async (req, res) => {
+  try {
+    const existing = await User.findOne({ username: 'sky' });
+    if (existing) {
+      return res.json({ success: true, message: 'Admin already exists' });
+    }
+    
+    const admin = new User({ username: 'sky', password: 'qwert' });
+    await admin.save();
+    
+    console.log('✅ Admin user created');
+    res.json({ success: true, message: 'Admin user created' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Middleware to check if admin
 const requireAdmin = (req, res, next) => {
   if (req.user.username !== 'sky') {
