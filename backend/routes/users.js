@@ -6,8 +6,16 @@ const Sale = require('../models/Sale');
 const Customer = require('../models/Customer');
 const Supplier = require('../models/Supplier');
 
-// Get all users with their data counts
-router.get('/', async (req, res) => {
+// Middleware to check if admin
+const requireAdmin = (req, res, next) => {
+  if (req.user.username !== 'sky') {
+    return res.status(403).json({ success: false, message: 'Admin access required' });
+  }
+  next();
+};
+
+// Get all users with their data counts (admin only)
+router.get('/', requireAdmin, async (req, res) => {
   try {
     const users = await User.find().select('-password');
     
@@ -33,8 +41,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Delete user and all their data
-router.delete('/:username', async (req, res) => {
+// Delete user and all their data (admin only)
+router.delete('/:username', requireAdmin, async (req, res) => {
   try {
     const { username } = req.params;
     

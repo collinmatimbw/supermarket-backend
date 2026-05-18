@@ -14,9 +14,10 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
   const { lang, setLang, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
-  useEffect(() => {
-    if (mobileOpen) onToggleMobile();
-  }, [location.pathname]);
+  // Get logged in user info
+  const auth = JSON.parse(localStorage.getItem('skyc_auth') || '{}');
+  const currentUser = auth.username;
+  const isAdmin = currentUser === 'sky'; // Only "sky" can manage users
 
   const navItems = [
     { path: '/', label: t('dashboard'), icon: LayoutDashboard },
@@ -26,7 +27,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
     { path: '/analytics', label: t('analytics'), icon: BarChart3 },
     { path: '/predictions', label: t('predictions'), icon: Brain },
     { path: '/settings', label: t('settings'), icon: Settings },
-    { path: '/manage-users', label: 'Manage Users', icon: Shield },
+    ...(isAdmin ? [{ path: '/manage-users', label: 'Manage Users', icon: Shield }] : []),
   ];
 
   const handleSignOut = () => {
