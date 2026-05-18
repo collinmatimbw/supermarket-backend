@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Mail, AlertCircle, Globe, Sun, Moon, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Globe, Sun, Moon } from 'lucide-react';
 import api from '../utils/api';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -9,7 +9,6 @@ export default function SignUp({ onLoginClick }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const { lang, setLang, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
@@ -105,21 +104,14 @@ export default function SignUp({ onLoginClick }) {
             <div className="relative">
               <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
-                className="form-input pl-9 pr-10"
-                type={showPassword ? "text" : "password"}
+                className="form-input pl-9"
+                type="password"
                 placeholder="Min 4 characters"
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 minLength={4}
                 required
               />
-              <button 
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
-              >
-                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
             </div>
           </div>
 
@@ -128,8 +120,8 @@ export default function SignUp({ onLoginClick }) {
             <div className="relative">
               <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
-                className="form-input pl-9 pr-10"
-                type={showPassword ? "text" : "password"}
+                className="form-input pl-9"
+                type="password"
                 placeholder="Confirm password"
                 value={form.confirmPassword}
                 onChange={e => setForm({ ...form, confirmPassword: e.target.value })}

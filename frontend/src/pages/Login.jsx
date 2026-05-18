@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, AlertCircle, Globe, Sun, Moon, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Globe, Sun, Moon } from 'lucide-react';
 import api from '../utils/api';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -9,7 +9,6 @@ export default function Login({ onSignUpClick }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { lang, setLang, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -79,21 +78,14 @@ export default function Login({ onSignUpClick }) {
             <div className="relative">
               <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
-                className="form-input pl-9 pr-10"
-                type={showPassword ? "text" : "password"}
+                className="form-input pl-9"
+                type="password"
                 placeholder="Your password"
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 autoComplete="current-password"
                 required
               />
-              <button 
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
-              >
-                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
             </div>
           </div>
 
