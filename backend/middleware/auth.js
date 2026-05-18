@@ -1,9 +1,6 @@
-const USERS = {
-  sky: { password: 'qwert' },
-  lukelo: { password: 'collin9619' },
-};
+const User = require('../models/User');
 
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Basic ')) {
     return res.status(401).json({ success: false, message: 'Authentication required' });
@@ -13,8 +10,8 @@ function authMiddleware(req, res, next) {
     const decoded = Buffer.from(authHeader.split(' ')[1], 'base64').toString('utf-8');
     const [username, password] = decoded.split(':');
 
-    const user = USERS[username];
-    if (!user || user.password !== password) {
+    const user = await User.findOne({ username, password });
+    if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
@@ -25,4 +22,4 @@ function authMiddleware(req, res, next) {
   }
 }
 
-module.exports = { authMiddleware, USERS };
+module.exports = { authMiddleware };
