@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User, AlertCircle, Globe, Sun, Moon } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Globe, Sun, Moon, Eye, EyeOff } from 'lucide-react';
 import api from '../utils/api';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Login({ onSignUpClick }) {
-  const [form, setForm] = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { lang, setLang, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -23,7 +24,7 @@ export default function Login({ onSignUpClick }) {
       localStorage.setItem('skyc_auth', JSON.stringify(res.data.data));
       navigate('/');
     } catch (err) {
-      setError(err.message || t('invalidCredentials'));
+      setError(err.message || 'Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -46,7 +47,7 @@ export default function Login({ onSignUpClick }) {
         <div className="text-center mb-8">
           <img src="/mylogo.png" alt="SKYC CRM" className="w-16 h-16 mx-auto mb-4 rounded-xl" style={{ background: 'linear-gradient(135deg, #059669, #0891b2)' }} />
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>SKYC CRM</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{t('signIn')}</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Sign in to your account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="glass p-6 space-y-4">
@@ -58,36 +59,46 @@ export default function Login({ onSignUpClick }) {
           )}
 
           <div>
-            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>{t('username')}</label>
+            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Email</label>
             <div className="relative">
-              <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
                 className="form-input pl-9"
-                placeholder={t('enterUsername')}
-                value={form.username}
-                onChange={e => setForm({ ...form, username: e.target.value })}
-                autoComplete="username"
+                type="email"
+                placeholder="your@email.com"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                autoComplete="email"
+                required
               />
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>{t('password')}</label>
+            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Password</label>
             <div className="relative">
               <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
-                className="form-input pl-9"
-                type="password"
-                placeholder={t('enterPassword')}
+                className="form-input pl-9 pr-10"
+                type={showPassword ? "text" : "password"}
+                placeholder="Your password"
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 autoComplete="current-password"
+                required
               />
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+              >
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
             </div>
           </div>
 
           <button type="submit" className="btn-primary w-full justify-center" disabled={loading}>
-            {loading ? t('signingIn') : t('signIn')}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
           
           <div className="text-center pt-2">

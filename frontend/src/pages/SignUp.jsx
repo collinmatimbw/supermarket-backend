@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Lock, User, AlertCircle, Globe, Sun, Moon, ArrowLeft } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Globe, Sun, Moon, Eye, EyeOff } from 'lucide-react';
 import api from '../utils/api';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 
-export default function SignUp({ onLoginClick, onSignUpSuccess }) {
-  const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' });
+export default function SignUp({ onLoginClick }) {
+  const [form, setForm] = useState({ email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { lang, setLang, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
@@ -17,15 +18,30 @@ export default function SignUp({ onLoginClick, onSignUpSuccess }) {
     setError('');
     setSuccess('');
 
+    if (!form.email || !form.password) {
+      setError('Email and password are required');
+      return;
+    }
+
+    if (!form.email.includes('@')) {
+      setError('Please enter a valid email');
+      return;
+    }
+
     if (form.password !== form.confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+
+    if (form.password.length < 4) {
+      setError('Password must be at least 4 characters');
       return;
     }
 
     setLoading(true);
 
     try {
-      await api.post('/users/signup', { username: form.username, password: form.password });
+      await api.post('/users/signup', { email: form.email, password: form.password });
       setSuccess('Account created! Please log in.');
       setTimeout(() => onLoginClick(), 2000);
     } catch (err) {
@@ -70,15 +86,15 @@ export default function SignUp({ onLoginClick, onSignUpSuccess }) {
           )}
 
           <div>
-            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Username *</label>
+            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Email *</label>
             <div className="relative">
-              <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
                 className="form-input pl-9"
-                placeholder="Enter username (min 3 chars)"
-                value={form.username}
-                onChange={e => setForm({ ...form, username: e.target.value })}
-                minLength={3}
+                type="email"
+                placeholder="your@email.com"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
                 required
               />
             </div>
@@ -89,14 +105,21 @@ export default function SignUp({ onLoginClick, onSignUpSuccess }) {
             <div className="relative">
               <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
-                className="form-input pl-9"
-                type="password"
-                placeholder="Enter password (min 4 chars)"
+                className="form-input pl-9 pr-10"
+                type={showPassword ? "text" : "password"}
+                placeholder="Min 4 characters"
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 minLength={4}
                 required
               />
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+              >
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
             </div>
           </div>
 
@@ -105,8 +128,8 @@ export default function SignUp({ onLoginClick, onSignUpSuccess }) {
             <div className="relative">
               <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
-                className="form-input pl-9"
-                type="password"
+                className="form-input pl-9 pr-10"
+                type={showPassword ? "text" : "password"}
                 placeholder="Confirm password"
                 value={form.confirmPassword}
                 onChange={e => setForm({ ...form, confirmPassword: e.target.value })}

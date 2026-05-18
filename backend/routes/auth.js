@@ -3,27 +3,27 @@ const router = express.Router();
 const User = require('../models/User');
 
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  console.log(`🔐 Login attempt: ${username}`);
+  const { email, password } = req.body;
+  console.log(`🔐 Login attempt: ${email}`);
 
-  if (!username || !password) {
-    return res.status(400).json({ success: false, message: 'Username and password required' });
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'Email and password required' });
   }
 
   try {
-    const user = await User.findOne({ username, password });
+    const user = await User.findOne({ email, password });
     if (!user) {
-      console.log(`❌ Login failed for: ${username}`);
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      console.log(`❌ Login failed for: ${email}`);
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    console.log(`✅ Login success: ${username}`);
-    const token = Buffer.from(`${username}:${password}`).toString('base64');
+    console.log(`✅ Login success: ${email}`);
+    const token = Buffer.from(`${email}:${password}`).toString('base64');
     res.json({
       success: true,
       data: {
         token,
-        username,
+        email,
       }
     });
   } catch (err) {

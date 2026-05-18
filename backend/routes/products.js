@@ -5,8 +5,8 @@ const { v4: uuidv4 } = require('uuid');
 
 router.get('/', async (req, res) => {
   try {
-    console.log('🔍 GET /products for user:', req.user.username);
-    const products = await Product.find({ userId: req.user.username, visible: { $ne: 'false' } }).sort({ createdAt: -1 });
+    console.log('🔍 GET /products for user:', req.user.email);
+    const products = await Product.find({ userId: req.user.email, visible: { $ne: 'false' } }).sort({ createdAt: -1 });
     console.log(`📦 Returning ${products.length} products`);
     res.json({ success: true, data: products });
   } catch (err) {
@@ -17,21 +17,21 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    console.log('📝 POST /products for user:', req.user.username);
+    console.log('📝 POST /products for user:', req.user.email);
     const { name, category, buyingPrice, sellingPrice, quantity, barcode, supplier } = req.body;
     if (!name || !category) {
       return res.status(400).json({ success: false, message: 'Name and category are required' });
     }
 
     if (barcode) {
-      const existing = await Product.findOne({ userId: req.user.username, barcode });
+      const existing = await Product.findOne({ userId: req.user.email, barcode });
       if (existing) {
         return res.status(400).json({ success: false, message: 'Barcode already exists' });
       }
     }
 
     const newProduct = new Product({
-      userId: req.user.username,
+      userId: req.user.email,
       id: 'P' + uuidv4().slice(0, 8).toUpperCase(),
       name,
       category,
@@ -61,7 +61,7 @@ router.put('/:id', async (req, res) => {
     if (updates.sellingPrice !== undefined) updates.sellingPrice = Number(updates.sellingPrice);
     if (updates.quantity !== undefined) updates.quantity = Number(updates.quantity);
 
-    const updated = await Product.findOneAndUpdate({ userId: req.user.username, id }, updates, { new: true });
+    const updated = await Product.findOneAndUpdate({ userId: req.user.email, id }, updates, { new: true });
     if (!updated) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, data: updated });
   } catch (err) {
@@ -71,7 +71,7 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const deleted = await Product.findOneAndDelete({ userId: req.user.username, id: req.params.id });
+    const deleted = await Product.findOneAndDelete({ userId: req.user.email, id: req.params.id });
     if (!deleted) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, message: 'Product deleted' });
   } catch (err) {
@@ -84,7 +84,7 @@ router.put('/:id/visible', async (req, res) => {
     const { id } = req.params;
     const { visible } = req.body;
     const newVisibility = visible === false ? 'false' : 'true';
-    const updated = await Product.findOneAndUpdate({ userId: req.user.username, id }, { visible: newVisibility }, { new: true });
+    const updated = await Product.findOneAndUpdate({ userId: req.user.email, id }, { visible: newVisibility }, { new: true });
     if (!updated) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, data: updated, message: visible === false ? 'Product hidden' : 'Product shown' });
   } catch (err) {

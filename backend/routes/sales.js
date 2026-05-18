@@ -6,8 +6,8 @@ const { v4: uuidv4 } = require('uuid');
 
 router.get('/', async (req, res) => {
   try {
-    console.log('🔍 GET /sales for user:', req.user.username);
-    const sales = await Sale.find({ userId: req.user.username }).sort({ createdAt: -1 });
+    console.log('🔍 GET /sales for user:', req.user.email);
+    const sales = await Sale.find({ userId: req.user.email }).sort({ createdAt: -1 });
     console.log(`📦 Returning ${sales.length} sales`);
     res.json({ success: true, data: sales });
   } catch (err) {
@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    console.log('📝 POST /sales for user:', req.user.username);
+    console.log('📝 POST /sales for user:', req.user.email);
     const { productName, quantity, price, buyingPrice, category, customerName, customerId, supplier } = req.body;
     if (!productName || !quantity || !price) {
       return res.status(400).json({ success: false, message: 'Product name, quantity, and price are required' });
@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
     const buyPrice = Number(buyingPrice) || 0;
     const total = sellPrice * qty;
 
-    const existingProduct = await Product.findOne({ userId: req.user.username, name: { $regex: new RegExp('^' + productName + '$', 'i') } });
+    const existingProduct = await Product.findOne({ userId: req.user.email, name: { $regex: new RegExp('^' + productName + '$', 'i') } });
     let productId;
 
     if (existingProduct) {
@@ -37,10 +37,10 @@ router.post('/', async (req, res) => {
       if (existingProduct.quantity < qty) {
         return res.status(400).json({ success: false, message: `Insufficient stock (${existingProduct.quantity} available)` });
       }
-      await Product.findOneAndUpdate({ userId: req.user.username, id: productId }, { quantity: existingProduct.quantity - qty });
+      await Product.findOneAndUpdate({ userId: req.user.email, id: productId }, { quantity: existingProduct.quantity - qty });
     } else {
       const newProduct = new Product({
-        userId: req.user.username,
+        userId: req.user.email,
         id: 'P' + uuidv4().slice(0, 8).toUpperCase(),
         name: productName,
         category: category || 'General',
@@ -58,7 +58,7 @@ router.post('/', async (req, res) => {
 
     const profit = (sellPrice - buyPrice) * qty;
     const newSale = new Sale({
-      userId: req.user.username,
+      userId: req.user.email,
       id: 'S' + uuidv4().slice(0, 8).toUpperCase(),
       productId,
       productName,
@@ -83,7 +83,7 @@ router.post('/', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const deleted = await Sale.findOneAndDelete({ userId: req.user.username, id: req.params.id });
+    const deleted = await Sale.findOneAndDelete({ userId: req.user.email, id: req.params.id });
     if (!deleted) return res.status(404).json({ success: false, message: 'Sale not found' });
     res.json({ success: true, message: 'Sale deleted' });
   } catch (err) {
@@ -93,8 +93,8 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/analytics', async (req, res) => {
   try {
-    const sales = await Sale.find({ userId: req.user.username });
-    const products = await Product.find({ userId: req.user.username });
+    const sales = await Sale.find({ userId: req.user.email });
+    const products = await Product.find({ userId: req.user.email });
     const period = req.query.period || '7d';
     const today = new Date();
     let startDate;

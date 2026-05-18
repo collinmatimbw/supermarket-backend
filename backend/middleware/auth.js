@@ -8,14 +8,14 @@ async function authMiddleware(req, res, next) {
 
   try {
     const decoded = Buffer.from(authHeader.split(' ')[1], 'base64').toString('utf-8');
-    const [username, password] = decoded.split(':');
+    const [email, password] = decoded.split(':');
 
-    const user = await User.findOne({ username, password });
+    const user = await User.findOne({ email, password });
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    req.user = { username };
+    req.user = { email };
     next();
   } catch (err) {
     return res.status(401).json({ success: false, message: 'Invalid authentication' });

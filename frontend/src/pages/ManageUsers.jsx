@@ -21,12 +21,12 @@ export default function ManageUsers() {
 
   useEffect(() => { loadUsers(); }, []);
 
-  const handleDelete = async (username) => {
-    if (!window.confirm(`Delete user "${username}" and ALL their data? This cannot be undone!`)) return;
+  const handleDelete = async (email) => {
+    if (!window.confirm(`Delete user "${email}" and ALL their data? This cannot be undone!`)) return;
     
     try {
-      await api.delete(`/users/${username}`);
-      toast.success(`User "${username}" deleted`);
+      await api.delete(`/users/${email}`);
+      toast.success(`User "${email}" deleted`);
       loadUsers();
     } catch (err) {
       toast.error(err.message);
@@ -44,7 +44,7 @@ export default function ManageUsers() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Username</th>
+              <th>Email</th>
               <th>Joined</th>
               <th>Products</th>
               <th>Sales</th>
@@ -55,8 +55,8 @@ export default function ManageUsers() {
           </thead>
           <tbody>
             {users.map(user => (
-              <tr key={user.username}>
-                <td className="font-medium text-slate-200">{user.username}</td>
+              <tr key={user.email}>
+                <td className="font-medium text-slate-200">{user.email}</td>
                 <td className="text-slate-400 text-sm">{user.createdAt}</td>
                 <td><span className="badge badge-blue">{user.products}</span></td>
                 <td><span className="badge badge-purple">{user.sales}</span></td>
@@ -65,7 +65,7 @@ export default function ManageUsers() {
                 <td>
                   <button 
                     className="btn-danger" 
-                    onClick={() => handleDelete(user.username)}
+                    onClick={() => handleDelete(user.email)}
                     title="Delete user and all data"
                   >
                     <Trash2 size={14} />
