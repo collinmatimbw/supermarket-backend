@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', authRouter);
-app.use('/api/users', authMiddleware, usersRouter);
+app.use('/api/users', usersRouter); // Signup is public
 app.use('/api/products', authMiddleware, productsRouter);
 app.use('/api/sales', authMiddleware, salesRouter);
 app.use('/api/customers', authMiddleware, customersRouter);

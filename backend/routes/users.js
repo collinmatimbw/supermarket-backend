@@ -5,8 +5,9 @@ const Product = require('../models/Product');
 const Sale = require('../models/Sale');
 const Customer = require('../models/Customer');
 const Supplier = require('../models/Supplier');
+const { authMiddleware } = require('../middleware/auth');
 
-// Seed admin user (run once)
+// Public: Seed admin user (run once)
 router.post('/seed-admin', async (req, res) => {
   try {
     const existing = await User.findOne({ username: 'sky' });
@@ -24,16 +25,49 @@ router.post('/seed-admin', async (req, res) => {
   }
 });
 
+// Public: Sign up new user
+router.post('/signup', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: 'Username and password required' });
+    }
+    
+    if (username.length < 3) {
+      return res.status(400).json({ success: false, message: 'Username must be at least 3 characters' });
+    }
+    
+    if (password.length < 4) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 4 characters' });
+    }
+    
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Username already taken' });
+    }
+    
+    const newUser = new User({ username, password });
+    await newUser.save();
+    
+    console.log(`✅ New user signed up: ${username}`);
+    res.status(201).json({ success: true, message: 'Account created successfully! Please log in.' });
+  } catch (err) {
+    console.error('❌ Signup error:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Middleware to check if admin
 const requireAdmin = (req, res, next) => {
-  if (req.user.username !== 'sky') {
+  if (!req.user || req.user.username !== 'sky') {
     return res.status(403).json({ success: false, message: 'Admin access required' });
   }
   next();
 };
 
 // Get all users with their data counts (admin only)
-router.get('/', requireAdmin, async (req, res) => {
+router.get('/', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const users = await User.find().select('-password');
     
@@ -60,7 +94,7 @@ router.get('/', requireAdmin, async (req, res) => {
 });
 
 // Delete user and all their data (admin only)
-router.delete('/:username', requireAdmin, async (req, res) => {
+router.delete('/:username', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { username } = req.params;
     
