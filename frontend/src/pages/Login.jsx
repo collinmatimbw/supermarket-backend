@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Lock, User, AlertCircle, Globe, Sun, Moon, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Lock, User, AlertCircle, Globe, Sun, Moon } from 'lucide-react';
 import api from '../utils/api';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -8,6 +9,7 @@ export default function Login({ onSignUpClick }) {
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const { lang, setLang, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
@@ -19,7 +21,7 @@ export default function Login({ onSignUpClick }) {
     try {
       const res = await api.post('/auth/login', form);
       localStorage.setItem('skyc_auth', JSON.stringify(res.data.data));
-      window.location.reload();
+      navigate('/');
     } catch (err) {
       setError(err.message || t('invalidCredentials'));
     } finally {
