@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 
 router.get('/', async (req, res) => {
   try {
-    const suppliers = await Supplier.find().sort({ createdAt: -1 });
+    const suppliers = await Supplier.find({ userId: req.user.username }).sort({ createdAt: -1 });
     res.json({ success: true, data: suppliers });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -18,6 +18,7 @@ router.post('/', async (req, res) => {
     if (!name) return res.status(400).json({ success: false, message: 'Name required' });
 
     const newSupplier = new Supplier({
+      userId: req.user.username,
       id: 'SUP' + uuidv4().slice(0, 8).toUpperCase(),
       name, phone: phone || '', email: email || '', address: address || '',
       productsSupplied: productsSupplied || '',
@@ -32,7 +33,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const updated = await Supplier.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
+    const updated = await Supplier.findOneAndUpdate({ userId: req.user.username, id: req.params.id }, req.body, { new: true });
     if (!updated) return res.status(404).json({ success: false, message: 'Supplier not found' });
     res.json({ success: true, data: updated });
   } catch (err) {
@@ -42,7 +43,7 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const deleted = await Supplier.findOneAndDelete({ id: req.params.id });
+    const deleted = await Supplier.findOneAndDelete({ userId: req.user.username, id: req.params.id });
     if (!deleted) return res.status(404).json({ success: false, message: 'Supplier not found' });
     res.json({ success: true, message: 'Supplier deleted' });
   } catch (err) {

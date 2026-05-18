@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const saleSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
   id: { type: String, required: true },
   productId: { type: String, default: '' },
   productName: { type: String, required: true },
@@ -13,5 +14,7 @@ const saleSchema = new mongoose.Schema({
   customerId: { type: String, default: '' },
   customerName: { type: String, default: 'Walk-in Customer' },
 }, { timestamps: true });
+
+saleSchema.index({ userId: 1, id: 1 });
 
 module.exports = mongoose.model('Sale', saleSchema);
