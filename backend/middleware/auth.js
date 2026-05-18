@@ -1,11 +1,6 @@
-const SHEET_ID_SKY = process.env.GOOGLE_SHEET_ID_SKY;
-const SHEET_ID_LUKELO = process.env.GOOGLE_SHEET_ID_LUKELO;
-
-console.log(`🔐 Auth init: SHEET_ID_SKY = ${SHEET_ID_SKY ? 'set' : 'MISSING'}, SHEET_ID_LUKELO = ${SHEET_ID_LUKELO ? 'set' : 'MISSING'}`);
-
 const USERS = {
-  sky: { password: 'qwert', spreadsheetId: SHEET_ID_SKY },
-  lukelo: { password: 'collin9619', spreadsheetId: SHEET_ID_LUKELO },
+  sky: { password: 'qwert' },
+  lukelo: { password: 'collin9619' },
 };
 
 function authMiddleware(req, res, next) {
@@ -23,7 +18,7 @@ function authMiddleware(req, res, next) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    req.user = { username, spreadsheetId: user.spreadsheetId };
+    req.user = { username };
     next();
   } catch (err) {
     return res.status(401).json({ success: false, message: 'Invalid authentication' });

@@ -1,23 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const { readSheet, appendRow, updateRow, deleteRow } = require('../helpers/googleSheets');
+const Sale = require('../models/Sale');
+const Product = require('../models/Product');
 const { v4: uuidv4 } = require('uuid');
 
 router.get('/', async (req, res) => {
   try {
-    console.log(`🔍 GET /sales for user ${req.user.username}`);
-    const sales = await readSheet(req.user.spreadsheetId, 'sales');
+    console.log('🔍 GET /sales');
+    const sales = await Sale.find().sort({ createdAt: -1 });
     console.log(`📦 Returning ${sales.length} sales`);
     res.json({ success: true, data: sales });
   } catch (err) {
-    console.error(`❌ GET /sales error: ${err.message}`);
+    console.error('❌ GET /sales error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
 router.post('/', async (req, res) => {
   try {
-    console.log(`📝 POST /sales for user ${req.user.username}`);
+    console.log('📝 POST /sales');
     const { productName, quantity, price, buyingPrice, category, customerName, customerId, supplier } = req.body;
     if (!productName || !quantity || !price) {
       return res.status(400).json({ success: false, message: 'Product name, quantity, and price are required' });
@@ -28,18 +29,17 @@ router.post('/', async (req, res) => {
     const buyPrice = Number(buyingPrice) || 0;
     const total = sellPrice * qty;
 
-    const products = await readSheet(req.user.spreadsheetId, 'products');
-    const existingProduct = products.find(p => p.name.toLowerCase() === productName.toLowerCase());
-
+    const existingProduct = await Product.findOne({ name: { $regex: new RegExp('^' + productName + '$', 'i') } });
     let productId;
+
     if (existingProduct) {
       productId = existingProduct.id;
       if (existingProduct.quantity < qty) {
-        return res.status(400).json({ success: false, message: `Insufficient stock for "${productName}" (${existingProduct.quantity} available)` });
+        return res.status(400).json({ success: false, message: `Insufficient stock (${existingProduct.quantity} available)` });
       }
-      await updateRow(req.user.spreadsheetId, 'products', productId, { quantity: existingProduct.quantity - qty });
+      await Product.findOneAndUpdate({ id: productId }, { quantity: existingProduct.quantity - qty });
     } else {
-      const newProduct = {
+      const newProduct = new Product({
         id: 'P' + uuidv4().slice(0, 8).toUpperCase(),
         name: productName,
         category: category || 'General',
@@ -49,14 +49,14 @@ router.post('/', async (req, res) => {
         barcode: '',
         supplier: supplier || '',
         dateAdded: new Date().toISOString().split('T')[0],
-      };
-      await appendRow(req.user.spreadsheetId, 'products', newProduct);
+        visible: 'true',
+      });
+      await newProduct.save();
       productId = newProduct.id;
     }
 
     const profit = (sellPrice - buyPrice) * qty;
-
-    const newSale = {
+    const newSale = new Sale({
       id: 'S' + uuidv4().slice(0, 8).toUpperCase(),
       productId,
       productName,
@@ -68,20 +68,20 @@ router.post('/', async (req, res) => {
       date: new Date().toISOString().split('T')[0],
       customerId: customerId || '',
       customerName: customerName || 'Walk-in Customer',
-    };
+    });
 
-    await appendRow(req.user.spreadsheetId, 'sales', newSale);
+    await newSale.save();
     console.log(`✅ Sale added: ${productName} (${qty} x ${sellPrice})`);
     res.status(201).json({ success: true, data: newSale });
   } catch (err) {
-    console.error(`❌ POST /sales error: ${err.message}`);
+    console.error('❌ POST /sales error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
 router.delete('/:id', async (req, res) => {
   try {
-    const deleted = await deleteRow(req.user.spreadsheetId, 'sales', req.params.id);
+    const deleted = await Sale.findOneAndDelete({ id: req.params.id });
     if (!deleted) return res.status(404).json({ success: false, message: 'Sale not found' });
     res.json({ success: true, message: 'Sale deleted' });
   } catch (err) {
@@ -91,11 +91,9 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/analytics', async (req, res) => {
   try {
-    const { sales, products } = await require('../helpers/googleSheets').readMultipleSheets(
-      req.user.spreadsheetId, ['sales', 'products']
-    );
+    const sales = await Sale.find();
+    const products = await Product.find();
     const period = req.query.period || '7d';
-
     const today = new Date();
     let startDate;
 
@@ -108,14 +106,12 @@ router.get('/analytics', async (req, res) => {
     }
 
     const filtered = sales.filter(s => new Date(s.date) >= startDate);
-
     const grouped = {};
     const isLongRange = period === '1y' || period === 'all';
+
     filtered.forEach(s => {
       const d = new Date(s.date);
-      const key = isLongRange
-        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-        : s.date;
+      const key = isLongRange ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` : s.date;
       if (!grouped[key]) grouped[key] = { revenue: 0, profit: 0, transactions: 0 };
       grouped[key].revenue += Number(s.total) || 0;
       grouped[key].profit += Number(s.profit) || 0;
@@ -123,12 +119,7 @@ router.get('/analytics', async (req, res) => {
     });
 
     const sortedKeys = Object.keys(grouped).sort();
-    const dailyRevenue = sortedKeys.map(key => ({
-      date: key,
-      revenue: grouped[key].revenue,
-      profit: grouped[key].profit,
-      transactions: grouped[key].transactions,
-    }));
+    const dailyRevenue = sortedKeys.map(key => ({ date: key, ...grouped[key] }));
 
     const catRevenue = {};
     filtered.forEach(s => {
@@ -141,22 +132,16 @@ router.get('/analytics', async (req, res) => {
     filtered.forEach(s => {
       prodSales[s.productName] = (prodSales[s.productName] || 0) + Number(s.total);
     });
-    const topProducts = Object.entries(prodSales)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([name, revenue]) => ({ name, revenue }));
-
-    const totalRevenue = filtered.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-    const totalProfit = filtered.reduce((sum, s) => sum + (Number(s.profit) || 0), 0);
+    const topProducts = Object.entries(prodSales).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, revenue]) => ({ name, revenue }));
 
     res.json({
       success: true,
       data: {
         dailyRevenue,
-        categoryRevenue: Object.entries(catRevenue).map(([cat, revenue]) => ({ category: cat, revenue })),
+        categoryRevenue: Object.entries(catRevenue).map(([category, revenue]) => ({ category, revenue })),
         topProducts,
-        totalRevenue,
-        totalProfit,
+        totalRevenue: filtered.reduce((sum, s) => sum + (Number(s.total) || 0), 0),
+        totalProfit: filtered.reduce((sum, s) => sum + (Number(s.profit) || 0), 0),
         totalSales: filtered.length,
         period,
       }
