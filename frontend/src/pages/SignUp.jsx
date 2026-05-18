@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Lock, User, AlertCircle, Globe, Sun, Moon, UserPlus } from 'lucide-react';
+import { Lock, User, AlertCircle, Globe, Sun, Moon, ArrowLeft } from 'lucide-react';
 import api from '../utils/api';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 
-export default function Login({ onSignUpClick }) {
-  const [form, setForm] = useState({ username: '', password: '' });
+export default function SignUp({ onLoginClick, onSignUpSuccess }) {
+  const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const { lang, setLang, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -14,14 +15,21 @@ export default function Login({ onSignUpClick }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+
+    if (form.password !== form.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await api.post('/auth/login', form);
-      localStorage.setItem('skyc_auth', JSON.stringify(res.data.data));
-      window.location.reload();
+      await api.post('/users/signup', { username: form.username, password: form.password });
+      setSuccess('Account created! Please log in.');
+      setTimeout(() => onLoginClick(), 2000);
     } catch (err) {
-      setError(err.message || t('invalidCredentials'));
+      setError(err.message || 'Failed to create account');
     } finally {
       setLoading(false);
     }
@@ -43,8 +51,8 @@ export default function Login({ onSignUpClick }) {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <img src="/mylogo.png" alt="SKYC CRM" className="w-16 h-16 mx-auto mb-4 rounded-xl" style={{ background: 'linear-gradient(135deg, #059669, #0891b2)' }} />
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>SKYC CRM</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{t('signIn')}</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Create Account</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Sign up to start managing your business</p>
         </div>
 
         <form onSubmit={handleSubmit} className="glass p-6 space-y-4">
@@ -54,45 +62,68 @@ export default function Login({ onSignUpClick }) {
               <span className="text-red-400">{error}</span>
             </div>
           )}
+          
+          {success && (
+            <div className="flex items-center gap-2 p-3 rounded-lg text-sm" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <span className="text-emerald-400">{success}</span>
+            </div>
+          )}
 
           <div>
-            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>{t('username')}</label>
+            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Username *</label>
             <div className="relative">
               <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
                 className="form-input pl-9"
-                placeholder={t('enterUsername')}
+                placeholder="Enter username (min 3 chars)"
                 value={form.username}
                 onChange={e => setForm({ ...form, username: e.target.value })}
-                autoComplete="username"
+                minLength={3}
+                required
               />
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>{t('password')}</label>
+            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Password *</label>
             <div className="relative">
               <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
                 className="form-input pl-9"
                 type="password"
-                placeholder={t('enterPassword')}
+                placeholder="Enter password (min 4 chars)"
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
-                autoComplete="current-password"
+                minLength={4}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Confirm Password *</label>
+            <div className="relative">
+              <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+              <input
+                className="form-input pl-9"
+                type="password"
+                placeholder="Confirm password"
+                value={form.confirmPassword}
+                onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
+                required
               />
             </div>
           </div>
 
           <button type="submit" className="btn-primary w-full justify-center" disabled={loading}>
-            {loading ? t('signingIn') : t('signIn')}
+            {loading ? 'Creating...' : 'Sign Up'}
           </button>
           
           <div className="text-center pt-2">
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              Don't have an account?{' '}
-              <button type="button" onClick={onSignUpClick} className="text-emerald-400 hover:underline font-medium">
-                Sign Up
+              Already have an account?{' '}
+              <button type="button" onClick={onLoginClick} className="text-emerald-400 hover:underline font-medium">
+                Log In
               </button>
             </p>
           </div>

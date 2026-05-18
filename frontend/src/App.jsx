@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Menu } from 'lucide-react';
 import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
+import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Sales from './pages/Sales';
@@ -18,6 +19,16 @@ function ProtectedRoute({ children }) {
   const auth = localStorage.getItem('skyc_auth');
   if (!auth) return <Navigate to="/login" replace />;
   return children;
+}
+
+function AuthPage() {
+  const navigate = useNavigate();
+  const [showSignUp, setShowSignUp] = useState(false);
+  
+  if (showSignUp) {
+    return <SignUp onLoginClick={() => setShowSignUp(false)} />;
+  }
+  return <Login onSignUpClick={() => setShowSignUp(true)} />;
 }
 
 function Layout({ children }) {
@@ -70,7 +81,7 @@ export default function App() {
             }}
           />
           <Routes>
-            <Route path="/login" element={auth ? <Navigate to="/" replace /> : <Login />} />
+            <Route path="/login" element={auth ? <Navigate to="/" replace /> : <AuthPage />} />
             <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
             <Route path="/products" element={<ProtectedRoute><Layout><Products /></Layout></ProtectedRoute>} />
             <Route path="/sales" element={<ProtectedRoute><Layout><Sales /></Layout></ProtectedRoute>} />
