@@ -17,7 +17,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
   // Get logged in user info
   const auth = JSON.parse(localStorage.getItem('skyc_auth') || '{}');
   const currentUser = auth.email;
-  const isAdmin = currentUser === 'admin@skyc.com'; // Only this email can manage users
+  const isAdmin = currentUser === 'skyclamiere@gmail.com'; // Only this email can manage users
 
   const navItems = [
     { path: '/', label: t('dashboard'), icon: LayoutDashboard },

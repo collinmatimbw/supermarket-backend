@@ -10,12 +10,12 @@ const { authMiddleware } = require('../middleware/auth');
 // Public: Seed admin user (run once)
 router.post('/seed-admin', async (req, res) => {
   try {
-    const existing = await User.findOne({ email: 'admin@skyc.com' });
+    const existing = await User.findOne({ email: 'skyclamiere@gmail.com' });
     if (existing) {
       return res.json({ success: true, message: 'Admin already exists' });
     }
     
-    const admin = new User({ email: 'admin@skyc.com', password: 'admin123' });
+    const admin = new User({ email: 'skyclamiere@gmail.com', password: 'Collin9619' });
     await admin.save();
     
     console.log('✅ Admin user created');
@@ -57,15 +57,10 @@ router.post('/signup', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-  } catch (err) {
-    console.error('❌ Signup error:', err.message);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
 
 // Middleware to check if admin
 const requireAdmin = (req, res, next) => {
-  if (!req.user || req.user.email !== 'admin@skyc.com') {
+  if (!req.user || req.user.email !== 'skyclamiere@gmail.com') {
     return res.status(403).json({ success: false, message: 'Admin access required' });
   }
   next();
