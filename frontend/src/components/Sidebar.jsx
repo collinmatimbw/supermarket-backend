@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, Users,
   BarChart3, Settings, ChevronLeft, ChevronRight,
-  Store, X, Brain, Globe, Sun, Moon, LogOut
+  Store, X, Brain, Globe, Sun, Moon, LogOut, Shield
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -26,6 +26,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
     { path: '/analytics', label: t('analytics'), icon: BarChart3 },
     { path: '/predictions', label: t('predictions'), icon: Brain },
     { path: '/settings', label: t('settings'), icon: Settings },
+    { path: '/manage-users', label: 'Manage Users', icon: Shield },
   ];
 
   const handleSignOut = () => {

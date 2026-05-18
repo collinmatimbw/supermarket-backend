@@ -14,6 +14,7 @@ import Customers from './pages/Customers';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import Predictions from './pages/Predictions';
+import ManageUsers from './pages/ManageUsers';
 
 function ProtectedRoute({ children }) {
   const auth = localStorage.getItem('skyc_auth');
@@ -89,6 +90,7 @@ export default function App() {
             <Route path="/analytics" element={<ProtectedRoute><Layout><Analytics /></Layout></ProtectedRoute>} />
             <Route path="/predictions" element={<ProtectedRoute><Layout><Predictions /></Layout></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
+            <Route path="/manage-users" element={<ProtectedRoute><Layout><ManageUsers /></Layout></ProtectedRoute>} />
           </Routes>
         </BrowserRouter>
       </ThemeProvider>
