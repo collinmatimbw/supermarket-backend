@@ -63,24 +63,23 @@ export default function Products() {
 
   const handleDelete = async (id, name) => {
     const removeOnly = window.confirm(
-      `Remove "${name}" from view?\n\n✅ OK = Remove from web only (stays in Google Sheet)\n❌ Cancel = Keep product`
+      `Remove "${name}" from view?\n\nOK = Remove from web only\nCancel = Keep product`
     );
     
     if (removeOnly) {
       setProducts(products.filter(p => p.id !== id));
-      toast.success('Removed from view (kept in sheet)');
+      toast.success('Removed from view');
       return;
     }
     
-const confirmPerm = window.confirm(`Permanently delete "${name}" from both?`);
-      if (confirmPerm) {
-        try {
-          await api.delete(`/products/${id}`);
-          toast.success('Permanently deleted');
-          load();
-        } catch (e) {
-          toast.error(e.message);
-        }
+    const confirmPerm = window.confirm(`Permanently delete "${name}" from both?`);
+    if (confirmPerm) {
+      try {
+        await api.delete(`/products/${id}`);
+        toast.success('Permanently deleted');
+        load();
+      } catch (e) {
+        toast.error(e.message);
       }
     }
   };
