@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Package, ShoppingCart, DollarSign, AlertTriangle, TrendingUp, Coins } from 'lucide-react';
+import { Package, ShoppingCart, DollarSign, AlertTriangle, TrendingUp } from 'lucide-react';
 import { Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement,
@@ -43,7 +43,6 @@ export default function Dashboard() {
   }, [period]);
 
   const totalRevenue = sales.reduce((s, sale) => s + Number(sale.total || 0), 0);
-  const totalProfit = sales.reduce((s, sale) => s + Number(sale.profit || 0), 0);
   const lowStockCount = products.filter(p => isLowStock(p.quantity)).length;
   const recentSales = [...sales].reverse().slice(0, 8);
 
@@ -67,15 +66,6 @@ export default function Dashboard() {
       pointRadius: 4,
       tension: 0.45,
       fill: true,
-    }, {
-      label: 'Profit (TZS)',
-      data: analytics.dailyRevenue.map(d => d.profit || 0),
-      borderColor: '#fbbf24',
-      backgroundColor: 'rgba(251,191,36,0.04)',
-      pointBackgroundColor: '#fbbf24',
-      pointRadius: 3,
-      tension: 0.4,
-      fill: false,
     }],
   } : null;
 
@@ -150,11 +140,10 @@ export default function Dashboard() {
   return (
     <div className="animate-fade-in">
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard title={t('totalProducts')} value={products.length} subtitle={t('inInventory')} icon={Package} color="blue" />
         <StatCard title={t('totalSales')} value={sales.length} subtitle={t('transactions')} icon={ShoppingCart} color="green" />
         <StatCard title={t('revenue')} value={formatCurrency(totalRevenue)} subtitle={t('allTime')} icon={DollarSign} color="yellow" />
-        <StatCard title="Profit" value={formatCurrency(totalProfit)} subtitle={totalProfit >= 0 ? 'Net gain' : 'Net loss'} icon={Coins} color={totalProfit >= 0 ? 'green' : 'red'} />
         <StatCard title={t('lowStock')} value={lowStockCount} subtitle={`≤10 ${t('unitsOrLess')}`} icon={AlertTriangle} color="red" />
       </div>
 
