@@ -19,16 +19,22 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
   const currentUser = auth.email;
   const isAdmin = currentUser === 'skyclamiere@gmail.com'; // Only this email can manage users
 
-  const navItems = [
-    { path: '/', label: t('dashboard'), icon: LayoutDashboard },
-    { path: '/products', label: t('products'), icon: Package },
-    { path: '/sales', label: t('sales'), icon: ShoppingCart },
-    { path: '/customers', label: t('customers'), icon: Users },
-    { path: '/analytics', label: t('analytics'), icon: BarChart3 },
-    { path: '/predictions', label: t('predictions'), icon: Brain },
-    { path: '/settings', label: t('settings'), icon: Settings },
-    ...(isAdmin ? [{ path: '/manage-users', label: 'Manage Users', icon: Shield }] : []),
-  ];
+  const navItems = isAdmin
+    ? [
+        { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+        { path: '/customers', label: 'Customers', icon: Users },
+        { path: '/settings', label: t('settings'), icon: Settings },
+        { path: '/manage-users', label: 'Manage Users', icon: Shield },
+      ]
+    : [
+        { path: '/', label: t('dashboard'), icon: LayoutDashboard },
+        { path: '/products', label: t('products'), icon: Package },
+        { path: '/sales', label: t('sales'), icon: ShoppingCart },
+        { path: '/customers', label: t('customers'), icon: Users },
+        { path: '/analytics', label: t('analytics'), icon: BarChart3 },
+        { path: '/predictions', label: t('predictions'), icon: Brain },
+        { path: '/settings', label: t('settings'), icon: Settings },
+      ];
 
   const handleSignOut = () => {
     localStorage.removeItem('skyc_auth');

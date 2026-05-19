@@ -8,6 +8,7 @@ import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import Products from './pages/Products';
 import Sales from './pages/Sales';
 import Customers from './pages/Customers';
@@ -20,6 +21,16 @@ function ProtectedRoute({ children }) {
   const auth = localStorage.getItem('skyc_auth');
   if (!auth) return <Navigate to="/login" replace />;
   return children;
+}
+
+function DashboardWrapper() {
+  const auth = JSON.parse(localStorage.getItem('skyc_auth') || '{}');
+  const isAdmin = auth.email === 'skyclamiere@gmail.com';
+  
+  if (isAdmin) {
+    return <AdminDashboard />;
+  }
+  return <Dashboard />;
 }
 
 function AuthPage() {
@@ -83,7 +94,7 @@ export default function App() {
           />
           <Routes>
             <Route path="/login" element={auth ? <Navigate to="/" replace /> : <AuthPage />} />
-            <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><Layout><DashboardWrapper /></Layout></ProtectedRoute>} />
             <Route path="/products" element={<ProtectedRoute><Layout><Products /></Layout></ProtectedRoute>} />
             <Route path="/sales" element={<ProtectedRoute><Layout><Sales /></Layout></ProtectedRoute>} />
             <Route path="/customers" element={<ProtectedRoute><Layout><Customers /></Layout></ProtectedRoute>} />
