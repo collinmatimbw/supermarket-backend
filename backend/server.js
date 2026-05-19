@@ -9,6 +9,7 @@ const productsRouter = require('./routes/products');
 const salesRouter = require('./routes/sales');
 const customersRouter = require('./routes/customers');
 const suppliersRouter = require('./routes/suppliers');
+const predictionsRouter = require('./routes/predictions');
 const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/products', authMiddleware, productsRouter);
 app.use('/api/sales', authMiddleware, salesRouter);
 app.use('/api/customers', authMiddleware, customersRouter);
 app.use('/api/suppliers', authMiddleware, suppliersRouter);
+app.use('/api/predictions', authMiddleware, predictionsRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
