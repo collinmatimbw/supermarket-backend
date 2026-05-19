@@ -8,7 +8,7 @@ router.get('/predictions', async (req, res) => {
     const sales = await Sale.find({ userId: req.user.email });
     const products = await Product.find({ userId: req.user.email });
 
-    if (sales.length === 0) {
+    if (sales.length === 0 || products.length === 0) {
       return res.json({
         success: true,
         data: {
@@ -63,11 +63,9 @@ router.get('/predictions', async (req, res) => {
       const forecastDate = new Date(lastDate);
       forecastDate.setDate(forecastDate.getDate() + i);
       const dateStr = forecastDate.toISOString().split('T')[0];
-
       const predictedRevenue = Math.max(0, avgRevenue + revenueTrend * i);
       const predictedProfit = Math.max(0, avgProfit + profitTrend * i);
       const predictedTransactions = Math.max(1, Math.round(avgTransactions + transactionTrend * i));
-
       salesForecast.push({
         date: dateStr,
         predictedRevenue: Math.round(predictedRevenue),
@@ -77,22 +75,43 @@ router.get('/predictions', async (req, res) => {
       });
     }
 
-    const productPredictions = [];
-    const productSales = {};
+    const productSalesMap = {};
     sales.forEach(s => {
       const pid = s.productId || 'unknown';
-      if (!productSales[pid]) productSales[pid] = { quantity: 0, revenue: 0 };
-      productSales[pid].quantity += Number(s.quantity || 0);
-      productSales[pid].quantity += Number(s.total || 0);
+      if (!productSalesMap[pid]) productSalesMap[pid] = { quantity: 0, revenue: 0, profit: 0 };
+      productSalesMap[pid].quantity += Number(s.quantity || 0);
+      productSalesMap[pid].revenue += Number(s.total || 0);
+      productSalesMap[pid].profit += Number(s.profit || 0);
     });
 
-    Object.entries(productSales).forEach(([pid, data]) => {
-      productPredictions.push({
-        productId: pid,
-        predictedDemand: data.quantity > 10 ? 'high' : data.quantity > 5 ? 'medium' : 'low',
-        confidence: Math.min(85, 40 + data.quantity * 5),
-      });
-    });
+    const totalRevenue = sales.reduce((sum, s) => sum + Number(s.total || 0), 0);
+    const productPredictions = products.map(p => {
+      const pid = p.id || p._id.toString();
+      const ps = productSalesMap[pid] || { quantity: 0, revenue: 0, profit: 0 };
+      const revenueShare = totalRevenue > 0 ? ((ps.revenue / totalRevenue) * 100).toFixed(1) : 0;
+      const margin = ps.revenue > 0 ? ((ps.profit / ps.revenue) * 100).toFixed(1) : 0;
+      const avgDailyQty = sortedDates.length > 0 ? ps.quantity / sortedDates.length : 0;
+      const daysUntilStockout = p.quantity > 0 && avgDailyQty > 0 ? Math.round(p.quantity / avgDailyQty) : 999;
+      const predictedWeekly = Math.round(avgDailyQty * 7);
+
+      return {
+        name: p.name || 'Unknown',
+        category: p.category || 'Uncategorized',
+        currentRevenue: Math.round(ps.revenue),
+        predictedWeeklyRevenue: Math.round(ps.revenue * 1.1),
+        revenue: Math.round(ps.revenue),
+        profit: Math.round(ps.profit),
+        margin: Number(margin),
+        quantity: ps.quantity,
+        revenueShare: Number(revenueShare),
+        performance: Number(revenueShare) > 10 ? 'excellent' : Number(revenueShare) > 5 ? 'good' : Number(revenueShare) > 2 ? 'average' : 'poor',
+        daysUntilStockout,
+        recommendation: {
+          priority: daysUntilStockout < 7 ? 'high' : daysUntilStockout < 14 ? 'medium' : 'low',
+          message: daysUntilStockout < 7 ? `Restock soon - ${daysUntilStockout} days left` : 'Stock level OK',
+        },
+      };
+    }).filter(p => p.quantity > 0 || p.revenue > 0);
 
     const totalDataPoints = sales.length;
     const overallConfidence = Math.min(95, Math.max(30, 50 + (totalDataPoints > 30 ? 30 : totalDataPoints)));
@@ -142,68 +161,87 @@ router.get('/market-analysis', async (req, res) => {
     const productSalesMap = {};
     sales.forEach(s => {
       const pid = s.productId || 'unknown';
-      if (!productSalesMap[pid]) productSalesMap[pid] = { quantity: 0, revenue: 0 };
+      if (!productSalesMap[pid]) productSalesMap[pid] = { quantity: 0, revenue: 0, profit: 0 };
       productSalesMap[pid].quantity += Number(s.quantity || 0);
       productSalesMap[pid].revenue += Number(s.total || 0);
+      productSalesMap[pid].profit += Number(s.profit || 0);
     });
 
+    const totalRevenue = sales.reduce((sum, s) => sum + Number(s.total || 0), 0);
     Object.entries(productSalesMap).forEach(([pid, data]) => {
+      const product = products.find(p => (p.id || p._id.toString()) === pid);
+      const revenueShare = totalRevenue > 0 ? ((data.revenue / totalRevenue) * 100).toFixed(1) : 0;
+      const margin = data.revenue > 0 ? ((data.profit / data.revenue) * 100).toFixed(1) : 0;
       productPerformance.push({
-        productId: pid,
-        totalQuantity: data.quantity,
-        totalRevenue: data.revenue,
-        performance: data.revenue > 10000 ? 'excellent' : data.revenue > 5000 ? 'good' : data.revenue > 1000 ? 'average' : 'poor',
+        name: product?.name || pid,
+        category: product?.category || 'Unknown',
+        revenue: Math.round(data.revenue),
+        profit: Math.round(data.profit),
+        margin: Number(margin),
+        quantity: data.quantity,
+        revenueShare: Number(revenueShare),
+        performance: Number(revenueShare) > 10 ? 'excellent' : Number(revenueShare) > 5 ? 'good' : Number(revenueShare) > 2 ? 'average' : 'poor',
       });
     });
-    productPerformance.sort((a, b) => b.totalRevenue - a.totalRevenue);
+    productPerformance.sort((a, b) => b.revenue - a.revenue);
 
     const categoryMap = {};
     products.forEach(p => {
       const cat = p.category || 'Uncategorized';
-      if (!categoryMap[cat]) categoryMap[cat] = { count: 0, revenue: 0 };
+      if (!categoryMap[cat]) categoryMap[cat] = { count: 0, revenue: 0, profit: 0 };
       categoryMap[cat].count += 1;
     });
     sales.forEach(s => {
       const cat = s.category || 'Unknown';
-      if (!categoryMap[cat]) categoryMap[cat] = { count: 0, revenue: 0 };
+      if (!categoryMap[cat]) categoryMap[cat] = { count: 0, revenue: 0, profit: 0 };
       categoryMap[cat].revenue += Number(s.total || 0);
+      categoryMap[cat].profit += Number(s.profit || 0);
     });
 
     const categoryInsights = Object.entries(categoryMap).map(([name, data]) => ({
       category: name,
       productCount: data.count,
-      totalRevenue: data.revenue,
+      totalRevenue: Math.round(data.revenue),
+      totalProfit: Math.round(data.profit),
       performance: data.revenue > 10000 ? 'high' : data.revenue > 5000 ? 'medium' : 'low',
     }));
 
     const recommendations = [];
     if (productPerformance.length > 0) {
       recommendations.push({
-        type: 'stock',
+        type: 'opportunity',
         priority: 'high',
-        message: `Top performer: ${productPerformance[0].productId} with ${productPerformance[0].totalRevenue.toLocaleString()} revenue`,
+        message: `Top performer: ${productPerformance[0].name} with ${productPerformance[0].revenue.toLocaleString()} revenue`,
         impact: 'high',
       });
     }
-    if (productPerformance.filter(p => p.performance === 'poor').length > 0) {
+    const poorPerformers = productPerformance.filter(p => p.performance === 'poor');
+    if (poorPerformers.length > 0) {
       recommendations.push({
-        type: 'discount',
+        type: 'warning',
         priority: 'medium',
-        message: `${productPerformance.filter(p => p.performance === 'poor').length} products underperforming - consider promotion`,
+        message: `${poorPerformers.length} products underperforming - consider promotion or removal`,
         impact: 'medium',
       });
     }
+    recommendations.push({
+      type: 'insight',
+      priority: 'low',
+      message: `Total ${productPerformance.length} products across ${categoryInsights.length} categories`,
+      impact: 'low',
+    });
 
-    const seasonalTrends = [];
     const monthSales = {};
     sales.forEach(s => {
       const month = s.date?.slice(0, 7) || 'unknown';
       if (!monthSales[month]) monthSales[month] = 0;
       monthSales[month] += Number(s.total || 0);
     });
-    Object.entries(monthSales).forEach(([month, revenue]) => {
-      seasonalTrends.push({ month, revenue, trend: 'stable' });
-    });
+    const seasonalTrends = Object.entries(monthSales).map(([month, revenue]) => ({
+      month,
+      revenue: Math.round(revenue),
+      trend: 'stable',
+    }));
     seasonalTrends.sort((a, b) => a.month.localeCompare(b.month));
 
     res.json({
