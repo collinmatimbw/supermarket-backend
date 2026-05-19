@@ -193,21 +193,25 @@ router.get('/market-analysis', async (req, res) => {
     const categoryMap = {};
     products.forEach(p => {
       const cat = p.category || 'Uncategorized';
-      if (!categoryMap[cat]) categoryMap[cat] = { count: 0, revenue: 0, profit: 0 };
+      if (!categoryMap[cat]) categoryMap[cat] = { count: 0, revenue: 0, profit: 0, transactions: 0 };
       categoryMap[cat].count += 1;
     });
     sales.forEach(s => {
       const cat = s.category || 'Unknown';
-      if (!categoryMap[cat]) categoryMap[cat] = { count: 0, revenue: 0, profit: 0 };
+      if (!categoryMap[cat]) categoryMap[cat] = { count: 0, revenue: 0, profit: 0, transactions: 0 };
       categoryMap[cat].revenue += Number(s.total || 0);
       categoryMap[cat].profit += Number(s.profit || 0);
+      categoryMap[cat].transactions += 1;
     });
 
+    const totalCategoryRevenue = Object.values(categoryMap).reduce((sum, c) => sum + c.revenue, 0);
     const categoryInsights = Object.entries(categoryMap).map(([name, data]) => ({
       category: name,
       productCount: data.count,
       revenue: Math.round(data.revenue),
       profit: Math.round(data.profit),
+      share: totalCategoryRevenue > 0 ? ((data.revenue / totalCategoryRevenue) * 100).toFixed(1) : 0,
+      avgTransaction: data.transactions > 0 ? Math.round(data.revenue / data.transactions) : 0,
       performance: data.revenue > 10000 ? 'high' : data.revenue > 5000 ? 'medium' : 'low',
     }));
 
@@ -247,18 +251,61 @@ router.get('/market-analysis', async (req, res) => {
       impact: 'low',
     });
 
-    const monthSales = {};
+    const dayOfWeekMap = {};
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     sales.forEach(s => {
-      const month = s.date?.slice(0, 7) || 'unknown';
-      if (!monthSales[month]) monthSales[month] = 0;
-      monthSales[month] += Number(s.total || 0);
+      const d = new Date(s.date);
+      if (!isNaN(d)) {
+        const dayName = dayNames[d.getDay()];
+        if (!dayOfWeekMap[dayName]) dayOfWeekMap[dayName] = { revenue: 0, transactions: 0, count: 0 };
+        dayOfWeekMap[dayName].revenue += Number(s.total || 0);
+        dayOfWeekMap[dayName].transactions += 1;
+        dayOfWeekMap[dayName].count += 1;
+      }
     });
-    const seasonalTrends = Object.entries(monthSales).map(([month, revenue]) => ({
-      month,
-      revenue: Math.round(revenue),
-      trend: 'stable',
-    }));
-    seasonalTrends.sort((a, b) => a.month.localeCompare(b.month));
+    const seasonalTrends = dayNames.map(day => {
+      const d = dayOfWeekMap[day] || { revenue: 0, transactions: 0, count: 0 };
+      return {
+        day,
+        avgRevenue: d.count > 0 ? Math.round(d.revenue / d.count) : 0,
+        avgTransactions: d.transactions,
+        totalRevenue: d.revenue,
+      };
+    });
+
+    const customerMap = {};
+    sales.forEach(s => {
+      const name = s.customerName || 'Walk-in';
+      if (!customerMap[name]) customerMap[name] = { totalSpent: 0, transactions: 0, products: new Set() };
+      customerMap[name].totalSpent += Number(s.total || 0);
+      customerMap[name].transactions += 1;
+      customerMap[name].products.add(s.productId || 'unknown');
+    });
+
+    const totalCustomers = Object.keys(customerMap).length;
+    const walkInCustomers = customerMap['Walk-in'] ? 1 : 0;
+    const registeredCustomers = totalCustomers - walkInCustomers;
+    const totalSalesAmount = sales.reduce((sum, s) => sum + Number(s.total || 0), 0);
+    const avgOrderValue = sales.length > 0 ? Math.round(totalSalesAmount / sales.length) : 0;
+
+    const topCustomers = Object.entries(customerMap)
+      .filter(([name]) => name !== 'Walk-in')
+      .map(([name, data]) => ({
+        name,
+        totalSpent: Math.round(data.totalSpent),
+        transactions: data.transactions,
+        uniqueProducts: data.products.size,
+      }))
+      .sort((a, b) => b.totalSpent - a.totalSpent)
+      .slice(0, 10);
+
+    const customerInsights = {
+      totalCustomers,
+      registeredCustomers,
+      walkInCustomers,
+      avgOrderValue,
+      topCustomers,
+    };
 
     res.json({
       success: true,
@@ -273,6 +320,7 @@ router.get('/market-analysis', async (req, res) => {
         categoryInsights,
         recommendations,
         seasonalTrends,
+        customerInsights,
       }
     });
   } catch (err) {
