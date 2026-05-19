@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// SKYC CRM v2.0
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Menu } from 'lucide-react';
