@@ -1,13 +1,14 @@
 const mongoose = require('mongoose');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://skycrm:qwert123@cluster0.olar6uh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://skycrm:qwert123@cluster0.olar6uh.mongodb.net/?retryWrites=true&w=majority';
 
 console.log('🔌 Connecting to MongoDB...');
 
 const options = {
-  serverSelectionTimeoutMS: 60000,
-  connectTimeoutMS: 60000,
-  socketTimeoutMS: 60000,
+  serverSelectionTimeoutMS: 90000,
+  connectTimeoutMS: 90000,
+  socketTimeoutMS: 90000,
+  maxPoolSize: 10,
 };
 
 mongoose.connect(MONGODB_URI, options)
@@ -24,8 +25,6 @@ mongoose.connect(MONGODB_URI, options)
   })
   .catch(err => {
     console.error('❌ MongoDB connection error:', err.message);
-    console.error('Error code:', err.code);
-    console.error('Error name:', err.name);
   });
 
 mongoose.connection.on('error', (err) => {
