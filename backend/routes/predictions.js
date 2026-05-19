@@ -51,6 +51,10 @@ router.get('/predictions', async (req, res) => {
     const profitTrend = calculateTrend(profits);
     const transactionTrend = calculateTrend(transactions);
 
+    // Check for negative profit sales (sold below cost)
+    const negativeProfitSales = sales.filter(s => Number(s.profit || 0) < 0);
+    const profitHealth = negativeProfitSales.length > 0 ? 'declining' : (profitTrend > 0 ? 'growing' : 'stable');
+
     const avgRevenue = revenues.length > 0 ? revenues.reduce((a, b) => a + b, 0) / revenues.length : 0;
     const avgProfit = profits.length > 0 ? profits.reduce((a, b) => a + b, 0) / profits.length : 0;
     const avgTransactions = transactions.length > 0 ? transactions.reduce((a, b) => a + b, 0) / transactions.length : 0;
@@ -129,7 +133,7 @@ router.get('/predictions', async (req, res) => {
         },
         trends: {
           revenue: revenueTrend > 0 ? 'up' : revenueTrend < 0 ? 'down' : 'stable',
-          profit: profitTrend > 0 ? 'up' : profitTrend < 0 ? 'down' : 'stable',
+          profit: profitHealth,
           transactions: transactionTrend > 0 ? 'up' : transactionTrend < 0 ? 'down' : 'stable',
         }
       }
@@ -148,6 +152,7 @@ router.get('/market-analysis', async (req, res) => {
       return res.json({
         success: true,
         data: {
+          summary: { totalProducts: 0, topPerformers: 0, underperformers: 0, totalCategories: 0 },
           productPerformance: [],
           categoryInsights: [],
           recommendations: [],
@@ -180,7 +185,7 @@ router.get('/market-analysis', async (req, res) => {
         margin: Number(margin),
         quantity: data.quantity,
         revenueShare: Number(revenueShare),
-        performance: Number(revenueShare) > 10 ? 'excellent' : Number(revenueShare) > 5 ? 'good' : Number(revenueShare) > 2 ? 'average' : 'poor',
+        performance: Number(margin) < 0 ? 'poor' : Number(revenueShare) > 10 ? 'excellent' : Number(revenueShare) > 5 ? 'good' : Number(revenueShare) > 2 ? 'average' : 'poor',
       });
     });
     productPerformance.sort((a, b) => b.revenue - a.revenue);
@@ -201,33 +206,44 @@ router.get('/market-analysis', async (req, res) => {
     const categoryInsights = Object.entries(categoryMap).map(([name, data]) => ({
       category: name,
       productCount: data.count,
-      totalRevenue: Math.round(data.revenue),
-      totalProfit: Math.round(data.profit),
+      revenue: Math.round(data.revenue),
+      profit: Math.round(data.profit),
       performance: data.revenue > 10000 ? 'high' : data.revenue > 5000 ? 'medium' : 'low',
     }));
+
+    const topPerformers = productPerformance.filter(p => p.performance === 'excellent' || p.performance === 'good').length;
+    const underperformers = productPerformance.filter(p => p.performance === 'poor').length;
 
     const recommendations = [];
     if (productPerformance.length > 0) {
       recommendations.push({
         type: 'opportunity',
-        priority: 'high',
-        message: `Top performer: ${productPerformance[0].name} with ${productPerformance[0].revenue.toLocaleString()} revenue`,
+        title: 'Top Performer',
+        description: `${productPerformance[0].name} leads with ${productPerformance[0].revenue.toLocaleString()} revenue`,
         impact: 'high',
       });
     }
-    const poorPerformers = productPerformance.filter(p => p.performance === 'poor');
-    if (poorPerformers.length > 0) {
+    if (underperformers > 0) {
       recommendations.push({
         type: 'warning',
-        priority: 'medium',
-        message: `${poorPerformers.length} products underperforming - consider promotion or removal`,
+        title: 'Underperforming Products',
+        description: `${underperformers} products have low sales or negative margins - consider discounting or removing`,
         impact: 'medium',
+      });
+    }
+    const negativeMargin = productPerformance.filter(p => p.margin < 0);
+    if (negativeMargin.length > 0) {
+      recommendations.push({
+        type: 'warning',
+        title: 'Products Sold Below Cost',
+        description: `${negativeMargin.length} products are being sold at a loss - review pricing immediately`,
+        impact: 'high',
       });
     }
     recommendations.push({
       type: 'insight',
-      priority: 'low',
-      message: `Total ${productPerformance.length} products across ${categoryInsights.length} categories`,
+      title: 'Portfolio Overview',
+      description: `${productPerformance.length} products across ${categoryInsights.length} categories`,
       impact: 'low',
     });
 
@@ -247,6 +263,12 @@ router.get('/market-analysis', async (req, res) => {
     res.json({
       success: true,
       data: {
+        summary: {
+          totalProducts: productPerformance.length,
+          topPerformers: topPerformers,
+          underperformers: underperformers,
+          totalCategories: categoryInsights.length,
+        },
         productPerformance: productPerformance.slice(0, 20),
         categoryInsights,
         recommendations,
