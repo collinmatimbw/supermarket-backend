@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 
 router.get('/', async (req, res) => {
   try {
-    const customers = await Customer.find({ userId: req.user.email }).sort({ createdAt: -1 });
+    const customers = await Customer.find({ userId: req.user.email, visible: 'true' }).sort({ createdAt: -1 });
     res.json({ success: true, data: customers });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -42,9 +42,20 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const deleted = await Customer.findOneAndDelete({ userId: req.user.email, id: req.params.id });
-    if (!deleted) return res.status(404).json({ success: false, message: 'Customer not found' });
-    res.json({ success: true, message: 'Customer deleted' });
+    const { permanent } = req.query;
+    if (permanent === 'true') {
+      const deleted = await Customer.findOneAndDelete({ userId: req.user.email, id: req.params.id });
+      if (!deleted) return res.status(404).json({ success: false, message: 'Customer not found' });
+      res.json({ success: true, message: 'Permanently deleted' });
+    } else {
+      const hidden = await Customer.findOneAndUpdate(
+        { userId: req.user.email, id: req.params.id },
+        { visible: 'false' },
+        { new: true }
+      );
+      if (!hidden) return res.status(404).json({ success: false, message: 'Customer not found' });
+      res.json({ success: true, message: 'Hidden from view' });
+    }
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -55,13 +55,30 @@ export default function Customers() {
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete customer "${name}"?`)) return;
-    try {
-      await api.delete(`/customers/${id}`);
-      toast.success('Customer deleted');
-      load();
-    } catch (e) {
-      toast.error(e.message);
+    const removeOnly = window.confirm(
+      `Remove "${name}" from view?\n\nOK = Remove from web only (stays in database)\nCancel = Keep customer`
+    );
+    
+    if (removeOnly) {
+      try {
+        await api.delete(`/customers/${id}`);
+        toast.success('Removed from view');
+        load();
+      } catch (e) {
+        toast.error(e.message);
+      }
+      return;
+    }
+    
+    const confirmPerm = window.confirm(`Permanently delete "${name}" and all their data?`);
+    if (confirmPerm) {
+      try {
+        await api.delete(`/customers/${id}?permanent=true`);
+        toast.success('Permanently deleted');
+        load();
+      } catch (e) {
+        toast.error(e.message);
+      }
     }
   };
 

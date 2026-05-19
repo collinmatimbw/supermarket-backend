@@ -8,6 +8,7 @@ const customerSchema = new mongoose.Schema({
   email: { type: String, default: '' },
   address: { type: String, default: '' },
   dateAdded: { type: String, default: '' },
+  visible: { type: String, default: 'true' },
 }, { timestamps: true });
 
 customerSchema.index({ userId: 1, id: 1 });
