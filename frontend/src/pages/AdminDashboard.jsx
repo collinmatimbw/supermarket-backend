@@ -1,188 +1,285 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Package, ShoppingCart, UserCheck, Clock, TrendingUp } from 'lucide-react';
-import { Bar } from 'react-chartjs-2';
+import { Users, TrendingUp, Activity, Crown, Star, Zap, Clock, BarChart3, PieChart, ArrowUpRight } from 'lucide-react';
+import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, BarElement,
-  Title, Tooltip, Legend
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement,
+  Title, Tooltip, Legend, ArcElement, Filler, BarElement
 } from 'chart.js';
 import PageHeader from '../components/PageHeader';
 import { LoadingState } from '../components/LoadingState';
 import api from '../utils/api';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement, Filler);
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    api.get('/users')
-      .then(r => {
-        const data = r.data.data || [];
-        setUsers(data);
-      })
-      .catch(err => {
-        console.error('Failed to load users:', err);
-        setError(err.message);
-        setUsers([]);
-      })
-      .finally(() => setLoading(false));
+    api.get('/users').then(r => {
+      setUsers(r.data.data || []);
+    }).catch(() => setUsers([])).finally(() => setLoading(false));
   }, []);
 
+  if (loading) return <LoadingState message="Loading dashboard..." />;
+
   const totalUsers = users.length;
-  const totalProducts = users.reduce((s, u) => s + (u.products || 0), 0);
+  const activeUsers = users.filter(u => u.sales > 0 || u.products > 0).length;
   const totalSales = users.reduce((s, u) => s + (u.sales || 0), 0);
+  const totalProducts = users.reduce((s, u) => s + (u.products || 0), 0);
   const totalCustomers = users.reduce((s, u) => s + (u.customers || 0), 0);
 
-  const activeUsers = users.filter(u => (u.sales || 0) > 0).length;
-  const topUsers = [...users].sort((a, b) => (b.sales || 0) - (a.sales || 0)).slice(0, 8);
+  const topUsers = [...users].sort((a, b) => (b.sales || 0) - (a.sales || 0)).slice(0, 5);
+  const newUsers = [...users].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
+
+  const userGrowth = (() => {
+    const months = {};
+    users.forEach(u => {
+      const m = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }) : 'Unknown';
+      months[m] = (months[m] || 0) + 1;
+    });
+    return months;
+  })();
+
+  const growthData = {
+    labels: Object.keys(userGrowth),
+    datasets: [{
+      label: 'New Users',
+      data: Object.values(userGrowth),
+      borderColor: '#6ee7b7',
+      backgroundColor: 'rgba(110,231,183,0.1)',
+      pointBackgroundColor: '#6ee7b7',
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      tension: 0.4,
+      fill: true,
+    }]
+  };
+
+  const activityData = {
+    labels: topUsers.map(u => u.email.split('@')[0]),
+    datasets: [
+      {
+        label: 'Sales',
+        data: topUsers.map(u => u.sales || 0),
+        backgroundColor: 'rgba(110,231,183,0.7)',
+        borderRadius: 8,
+      },
+      {
+        label: 'Products',
+        data: topUsers.map(u => u.products || 0),
+        backgroundColor: 'rgba(167,139,250,0.7)',
+        borderRadius: 8,
+      }
+    ]
+  };
+
+  const categoryData = {
+    labels: ['Active', 'Inactive'],
+    datasets: [{
+      data: [activeUsers, totalUsers - activeUsers],
+      backgroundColor: ['#6ee7b7', '#334155'],
+      borderColor: 'transparent',
+      borderWidth: 0,
+    }]
+  };
+
+  const chartOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: '#64748b', font: { family: 'Sora', size: 11 } } },
+      tooltip: {
+        backgroundColor: 'rgba(15,23,42,0.95)',
+        borderColor: 'rgba(255,255,255,0.08)',
+        borderWidth: 1,
+        titleColor: '#94a3b8',
+        bodyColor: '#f1f5f9',
+        padding: 12,
+      }
+    },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475569', font: { family: 'Sora', size: 11 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475569', font: { family: 'Sora', size: 11 } }, beginAtZero: true }
+    }
+  };
 
   const formatDate = (date) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const d = new Date(date);
+    const now = new Date();
+    const diff = now - d;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
   };
 
-  if (loading) return <LoadingState message="Loading user progress..." />;
+  const getInitials = (email) => email.split('@')[0].slice(0, 2).toUpperCase();
+
+  const gradients = [
+    'linear-gradient(135deg, #059669, #10b981)',
+    'linear-gradient(135deg, #0891b2, #06b6d4)',
+    'linear-gradient(135deg, #7c3aed, #8b5cf6)',
+    'linear-gradient(135deg, #d97706, #f59e0b)',
+    'linear-gradient(135deg, #dc2626, #ef4444)',
+  ];
 
   return (
     <div className="animate-fade-in space-y-6">
-      <PageHeader title="User Progress" subtitle={`${totalUsers} registered users`} />
+      <PageHeader title="Admin Dashboard" subtitle="Track your users' progress" />
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
-          Error loading data: {error}
-        </div>
-      )}
-
-      {/* Stats */}
+      {/* Hero Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-          <div className="flex items-center justify-between">
+        <div className="relative overflow-hidden rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}>
+          <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20 -translate-y-6 translate-x-6" style={{ background: 'radial-gradient(circle, white, transparent)' }} />
+          <Users size={20} className="mb-3 opacity-80" />
+          <p className="text-3xl font-bold">{totalUsers}</p>
+          <p className="text-sm opacity-80 mt-1">Total Users</p>
+        </div>
+
+        <div className="relative overflow-hidden rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, #0891b2, #06b6d4)' }}>
+          <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20 -translate-y-6 translate-x-6" style={{ background: 'radial-gradient(circle, white, transparent)' }} />
+          <Activity size={20} className="mb-3 opacity-80" />
+          <p className="text-3xl font-bold">{activeUsers}</p>
+          <p className="text-sm opacity-80 mt-1">Active Users</p>
+        </div>
+
+        <div className="relative overflow-hidden rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #8b5cf6)' }}>
+          <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20 -translate-y-6 translate-x-6" style={{ background: 'radial-gradient(circle, white, transparent)' }} />
+          <BarChart3 size={20} className="mb-3 opacity-80" />
+          <p className="text-3xl font-bold">{totalSales.toLocaleString()}</p>
+          <p className="text-sm opacity-80 mt-1">Total Sales</p>
+        </div>
+
+        <div className="relative overflow-hidden rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, #d97706, #f59e0b)' }}>
+          <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20 -translate-y-6 translate-x-6" style={{ background: 'radial-gradient(circle, white, transparent)' }} />
+          <PieChart size={20} className="mb-3 opacity-80" />
+          <p className="text-3xl font-bold">{totalProducts.toLocaleString()}</p>
+          <p className="text-sm opacity-80 mt-1">Total Products</p>
+        </div>
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-slate-400 text-xs">Total Users</p>
-              <p className="text-2xl font-bold text-white mt-1">{totalUsers}</p>
+              <h3 className="font-semibold text-white">User Growth</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Sign-ups over time</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-              <Users className="text-emerald-400" size={20} />
-            </div>
+            <TrendingUp size={18} className="text-emerald-400" />
+          </div>
+          <div style={{ height: 220 }}>
+            {Object.keys(userGrowth).length > 0 ? (
+              <Line data={growthData} options={{ ...chartOpts, plugins: { ...chartOpts.plugins, legend: { display: false } } }} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-600 text-sm">No data yet</div>
+            )}
           </div>
         </div>
 
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-          <div className="flex items-center justify-between">
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-slate-400 text-xs">Active Users</p>
-              <p className="text-2xl font-bold text-white mt-1">{activeUsers}</p>
+              <h3 className="font-semibold text-white">Activity</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Active vs Inactive</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-              <TrendingUp className="text-blue-400" size={20} />
-            </div>
+            <Zap size={18} className="text-yellow-400" />
           </div>
-        </div>
-
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-slate-400 text-xs">Total Sales</p>
-              <p className="text-2xl font-bold text-white mt-1">{totalSales.toLocaleString()}</p>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-              <ShoppingCart className="text-purple-400" size={20} />
-            </div>
+          <div style={{ height: 160 }}>
+            <Doughnut data={categoryData} options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: '70%',
+              plugins: {
+                legend: { position: 'bottom', labels: { color: '#64748b', font: { family: 'Sora', size: 11 }, padding: 12 } }
+              }
+            }} />
           </div>
-        </div>
-
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-slate-400 text-xs">Total Products</p>
-              <p className="text-2xl font-bold text-white mt-1">{totalProducts.toLocaleString()}</p>
+          <div className="flex justify-center gap-6 mt-3 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+              <span className="text-slate-400">Active ({activeUsers})</span>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
-              <Package className="text-amber-400" size={20} />
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-slate-600" />
+              <span className="text-slate-400">Inactive ({totalUsers - activeUsers})</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* User Progress Table */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">User Progress</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-slate-400 border-b border-slate-700">
-                <th className="text-left py-3 px-2">User</th>
-                <th className="text-center py-3 px-2">Products</th>
-                <th className="text-center py-3 px-2">Sales</th>
-                <th className="text-center py-3 px-2">Customers</th>
-                <th className="text-center py-3 px-2">Joined</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-8 text-slate-500">No users yet</td></tr>
-              ) : (
-                users.map((user, i) => (
-                  <tr key={i} className="border-b border-slate-700/50 hover:bg-slate-700/20">
-                    <td className="py-3 px-2 text-white font-medium text-sm">{user.email}</td>
-                    <td className="py-3 px-2 text-center">
-                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-purple-500/20 text-purple-300 text-xs">
-                        {user.products || 0}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-center">
-                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-500/20 text-blue-300 text-xs">
-                        {user.sales || 0}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-center">
-                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-amber-500/20 text-amber-300 text-xs">
-                        {user.customers || 0}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-center text-slate-400 text-xs">
-                      <Clock size={12} className="inline mr-1" />
-                      {formatDate(user.createdAt)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Leaderboard & Recent Users */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Top Performers */}
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Crown size={18} className="text-yellow-400" />
+            <h3 className="font-semibold text-white">Top Performers</h3>
+          </div>
+          {topUsers.length === 0 ? (
+            <p className="text-slate-500 text-sm text-center py-8">No activity yet</p>
+          ) : (
+            <div className="space-y-3">
+              {topUsers.map((user, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ background: gradients[i % gradients.length] }}>
+                    {getInitials(user.email)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{user.email}</p>
+                    <p className="text-xs text-slate-500">{user.sales || 0} sales · {user.products || 0} products</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-emerald-400">
+                    <Star size={14} />
+                    <span className="text-sm font-semibold">#{i + 1}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Sign-ups */}
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock size={18} className="text-blue-400" />
+            <h3 className="font-semibold text-white">Recent Sign-ups</h3>
+          </div>
+          {newUsers.length === 0 ? (
+            <p className="text-slate-500 text-sm text-center py-8">No users yet</p>
+          ) : (
+            <div className="space-y-3">
+              {newUsers.map((user, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ background: gradients[(i + 2) % gradients.length] }}>
+                    {getInitials(user.email)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{user.email}</p>
+                    <p className="text-xs text-slate-500">Joined {formatDate(user.createdAt)}</p>
+                  </div>
+                  <ArrowUpRight size={16} className="text-slate-600" />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Top Users Chart */}
+      {/* Activity Comparison Chart */}
       {topUsers.length > 0 && (
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Top Users by Sales</h3>
-          <div className="h-64">
-            <Bar
-              data={{
-                labels: topUsers.map(u => u.email.split('@')[0]),
-                datasets: [{
-                  label: 'Sales Count',
-                  data: topUsers.map(u => u.sales || 0),
-                  backgroundColor: 'rgba(16, 185, 129, 0.6)',
-                  borderColor: '#10b981',
-                  borderWidth: 1,
-                  borderRadius: 6,
-                }]
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                  y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-                  x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-                }
-              }}
-            />
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-white">Activity Comparison</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Top 5 users by sales & products</p>
+            </div>
+          </div>
+          <div style={{ height: 240 }}>
+            <Bar data={activityData} options={{ ...chartOpts, plugins: { ...chartOpts.plugins, legend: { ...chartOpts.plugins.legend, position: 'top' } } }} />
           </div>
         </div>
       )}
