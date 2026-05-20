@@ -17,7 +17,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     api.get('/users').then(r => {
-      setUsers(r.data.data);
+      setUsers(r.data.data || []);
+    }).catch(err => {
+      console.error('Admin dashboard error:', err);
+      setUsers([]);
     }).finally(() => setLoading(false));
   }, []);
 
