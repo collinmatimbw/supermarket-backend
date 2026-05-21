@@ -62,7 +62,7 @@ export default function Login({ onSignUpClick }) {
             <div className="relative">
               <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
-                className="form-input pl-9"
+                className="form-input pl-9 text-center"
                 type="email"
                 placeholder="your@email.com"
                 value={form.email}
@@ -78,7 +78,7 @@ export default function Login({ onSignUpClick }) {
             <div className="relative">
               <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
-                className="form-input pl-9"
+                className="form-input pl-9 text-center"
                 type="password"
                 placeholder="Your password"
                 value={form.password}
