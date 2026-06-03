@@ -58,12 +58,16 @@ export default function Sales() {
 
   const updateQuantity = (q) => {
     const quantity = Math.max(1, Number(q) || 1);
-    setForm(prev => ({
-      ...prev,
-      quantity,
-      total: prev.price * quantity,
-      profit: ((prev.price - 0) * quantity),
-    }));
+    setForm(prev => {
+      const product = products.find(p => p.id === prev.productId);
+      const costPrice = product?.costPrice || 0;
+      return {
+        ...prev,
+        quantity,
+        total: prev.price * quantity,
+        profit: (prev.price - costPrice) * quantity,
+      };
+    });
   };
 
   const openNewSale = () => {
