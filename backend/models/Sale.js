@@ -14,6 +14,9 @@ const saleSchema = new mongoose.Schema({
   customerId: { type: String, default: '' },
   date: { type: String, default: '' },
   paymentMethod: { type: String, default: 'cash' },
+  paymentStatus: { type: String, default: 'paid' },
+  paidAmount: { type: Number, default: 0 },
+  balance: { type: Number, default: 0 },
   notes: { type: String, default: '' },
 }, { timestamps: true });
 

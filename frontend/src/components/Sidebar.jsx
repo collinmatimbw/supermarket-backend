@@ -3,7 +3,8 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, Users,
   BarChart3, Settings, ChevronLeft, ChevronRight,
-  Store, X, Target, ClipboardList, FileText, Globe, Sun, Moon, LogOut, Shield
+  Store, X, Target, ClipboardList, FileText, Globe, Sun, Moon, LogOut, Shield,
+  TrendingDown
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -24,6 +25,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
     { path: '/customers', label: 'Customers', icon: Users },
     { path: '/leads', label: 'Leads', icon: Target },
     { path: '/sales', label: 'Sales', icon: ShoppingCart },
+    { path: '/expenses', label: 'Expenses', icon: TrendingDown },
     { path: '/products', label: 'Products', icon: Package },
     { path: '/tasks', label: 'Tasks', icon: ClipboardList },
     { path: '/reports', label: 'Reports', icon: FileText },

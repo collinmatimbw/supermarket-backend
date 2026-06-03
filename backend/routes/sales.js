@@ -13,14 +13,18 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { productId, productName, category, quantity, price, total, profit, customerName, customerId, date, paymentMethod, notes } = req.body;
+    const { productId, productName, category, quantity, price, total, profit, customerName, customerId, date, paymentMethod, paidAmount, notes } = req.body;
+    const saleTotal = Number(total) || 0;
+    const paid = Number(paidAmount) || (paymentMethod === 'credit' ? 0 : saleTotal);
+    const balance = Math.max(0, saleTotal - paid);
+    const paymentStatus = balance >= saleTotal ? 'credit' : balance > 0 ? 'partial' : 'paid';
     const sale = new Sale({
       userId: req.user.email, id: 'S' + uuidv4().slice(0, 8).toUpperCase(),
       productId: productId || '', productName: productName || '', category: category || '',
-      quantity: Number(quantity) || 0, price: Number(price) || 0, total: Number(total) || 0,
+      quantity: Number(quantity) || 0, price: Number(price) || 0, total: saleTotal,
       profit: Number(profit) || 0, customerName: customerName || 'Walk-in', customerId: customerId || '',
       date: date || new Date().toISOString().split('T')[0],
-      paymentMethod: paymentMethod || 'cash', notes: notes || '',
+      paymentMethod: paymentMethod || 'cash', paymentStatus, paidAmount: paid, balance, notes: notes || '',
     });
     await sale.save();
     await Product.findOneAndUpdate({ userId: req.user.email, id: productId }, { $inc: { quantity: -(Number(quantity) || 0) } });
@@ -32,6 +36,20 @@ router.put('/:id', async (req, res) => {
   try {
     const updated = await Sale.findOneAndUpdate({ userId: req.user.email, id: req.params.id }, req.body, { new: true });
     if (!updated) return res.status(404).json({ success: false, message: 'Sale not found' });
+    res.json({ success: true, data: updated });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+router.put('/:id/payment', async (req, res) => {
+  try {
+    const { paidAmount } = req.body;
+    const sale = await Sale.findOne({ userId: req.user.email, id: req.params.id });
+    if (!sale) return res.status(404).json({ success: false, message: 'Sale not found' });
+    const newPaid = (sale.paidAmount || 0) + (Number(paidAmount) || 0);
+    const balance = Math.max(0, (sale.total || 0) - newPaid);
+    const paymentStatus = balance >= (sale.total || 0) ? 'credit' : balance > 0 ? 'partial' : 'paid';
+    const updated = await Sale.findOneAndUpdate({ userId: req.user.email, id: req.params.id },
+      { paidAmount: newPaid, balance, paymentStatus }, { new: true });
     res.json({ success: true, data: updated });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });

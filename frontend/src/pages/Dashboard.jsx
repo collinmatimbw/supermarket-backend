@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Clock, Users, Target, Package, Phone, MessageCircle, Plus } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Clock, Users, Target, Package, Phone, MessageCircle, Plus, TrendingDown, CreditCard, Wallet } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import StatCard from '../components/StatCard';
@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [sales, setSales] = useState([]);
   const [leads, setLeads] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,12 +30,14 @@ export default function Dashboard() {
       api.get('/leads'),
       api.get('/tasks'),
       api.get('/sales/analytics?period=30d'),
-    ]).then(([p, s, l, t, a]) => {
+      api.get('/expenses'),
+    ]).then(([p, s, l, t, a, e]) => {
       setProducts(p.data.data);
       setSales(s.data.data);
       setLeads(l.data.data || []);
       setTasks(t.data.data || []);
       setAnalytics(a.data.data);
+      setExpenses(e.data.data || []);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -49,6 +52,11 @@ export default function Dashboard() {
   const profitMargin = monthlyRevenue > 0 ? ((totalProfit / sales.reduce((sum, s) => sum + Number(s.total || 0), 0)) * 100).toFixed(1) : 0;
   const lowStockItems = products.filter(p => isLowStock(p.quantity));
   const pendingLeads = leads.filter(l => l.stage !== 'won' && l.stage !== 'lost');
+  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const outstandingDebts = sales.reduce((s, sale) => s + Number(sale.balance || 0), 0);
+  const creditSales = sales.filter(s => s.paymentStatus === 'credit' || s.paymentStatus === 'partial');
+  const totalRevenueAll = sales.reduce((s, sale) => s + Number(sale.total || 0), 0);
+  const cashInHand = totalRevenueAll - totalExpenses;
   const pendingTasks = tasks.filter(t => t.done !== 'true');
   const todayTasks = pendingTasks.filter(t => t.dueDate === today);
   const overdueTasks = pendingTasks.filter(t => t.dueDate && t.dueDate < today);
@@ -73,37 +81,47 @@ export default function Dashboard() {
   return (
     <div className="animate-fade-in space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-2xl p-5 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-10 -translate-y-6 translate-x-6 bg-white" />
-          <ShoppingCart size={18} className="opacity-80 mb-2" />
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+        <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-2xl p-4 text-white relative overflow-hidden">
+          <ShoppingCart size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Today's Sales</p>
-          <p className="text-2xl font-bold mt-1">{formatCurrency(todayRevenue)}</p>
-          <p className="text-xs opacity-70 mt-1">{todaySales.length} transactions</p>
+          <p className="text-xl font-bold mt-1">{formatCurrency(todayRevenue)}</p>
+          <p className="text-xs opacity-70 mt-0.5">{todaySales.length} transactions</p>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-10 -translate-y-6 translate-x-6 bg-white" />
-          <DollarSign size={18} className="opacity-80 mb-2" />
+        <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-4 text-white relative overflow-hidden">
+          <DollarSign size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Monthly Revenue</p>
-          <p className="text-2xl font-bold mt-1">{formatCurrency(monthlyRevenue)}</p>
-          <p className="text-xs opacity-70 mt-1">{monthlySales.length} sales this month</p>
+          <p className="text-xl font-bold mt-1">{formatCurrency(monthlyRevenue)}</p>
+          <p className="text-xs opacity-70 mt-0.5">{monthlySales.length} sales</p>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-2xl p-5 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-10 -translate-y-6 translate-x-6 bg-white" />
-          <TrendingUp size={18} className="opacity-80 mb-2" />
+        <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-2xl p-4 text-white relative overflow-hidden">
+          <TrendingUp size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Net Profit</p>
-          <p className="text-2xl font-bold mt-1">{formatCurrency(totalProfit)}</p>
-          <p className="text-xs opacity-70 mt-1">Margin: {profitMargin}%</p>
+          <p className="text-xl font-bold mt-1">{formatCurrency(totalProfit)}</p>
+          <p className="text-xs opacity-70 mt-0.5">Margin: {profitMargin}%</p>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-600 to-amber-800 rounded-2xl p-5 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-10 -translate-y-6 translate-x-6 bg-white" />
-          <AlertTriangle size={18} className="opacity-80 mb-2" />
+        <div className="bg-gradient-to-br from-red-600 to-red-800 rounded-2xl p-4 text-white relative overflow-hidden">
+          <CreditCard size={16} className="opacity-80 mb-1.5" />
+          <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Outstanding Debt</p>
+          <p className="text-xl font-bold mt-1">{formatCurrency(outstandingDebts)}</p>
+          <p className="text-xs opacity-70 mt-0.5">{creditSales.length} debtors</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-4 text-white relative overflow-hidden">
+          <Wallet size={16} className="opacity-80 mb-1.5" />
+          <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Cash in Hand</p>
+          <p className="text-xl font-bold mt-1">{formatCurrency(cashInHand)}</p>
+          <p className="text-xs opacity-70 mt-0.5">Revenue − Expenses</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-amber-600 to-amber-800 rounded-2xl p-4 text-white relative overflow-hidden">
+          <AlertTriangle size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Low Stock</p>
-          <p className="text-2xl font-bold mt-1">{lowStockItems.length}</p>
-          <p className="text-xs opacity-70 mt-1">products need reorder</p>
+          <p className="text-xl font-bold mt-1">{lowStockItems.length}</p>
+          <p className="text-xs opacity-70 mt-0.5">need reorder</p>
         </div>
       </div>
 

@@ -7,7 +7,7 @@ import { LoadingState, EmptyState } from '../components/LoadingState';
 import api from '../utils/api';
 import { formatCurrency, formatDate } from '../utils/helpers';
 
-const emptyForm = { productId: '', productName: '', quantity: 1, price: 0, total: 0, profit: 0, customerName: 'Walk-in', paymentMethod: 'cash' };
+const emptyForm = { productId: '', productName: '', quantity: 1, price: 0, total: 0, profit: 0, customerName: 'Walk-in', paymentMethod: 'cash', paidAmount: 0 };
 
 export default function Sales() {
   const [sales, setSales] = useState([]);
@@ -136,6 +136,7 @@ export default function Sales() {
                   <th className="text-right py-3 px-4 font-medium">Total</th>
                   <th className="text-right py-3 px-4 font-medium">Profit</th>
                   <th className="text-center py-3 px-4 font-medium">Payment</th>
+                  <th className="text-center py-3 px-4 font-medium">Status</th>
                   <th className="text-center py-3 px-4 font-medium">Customer</th>
                   <th className="text-center py-3 px-4 font-medium"></th>
                 </tr>
@@ -151,6 +152,11 @@ export default function Sales() {
                     <td className="py-3 px-4 text-center">
                       <span className={`text-xs px-2 py-1 rounded-full capitalize ${sale.paymentMethod === 'cash' ? 'bg-emerald-500/20 text-emerald-400' : sale.paymentMethod === 'mobile' ? 'bg-blue-500/20 text-blue-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                         {sale.paymentMethod}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className={`text-xs px-2 py-1 rounded-full capitalize ${sale.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : sale.paymentStatus === 'partial' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                        {sale.paymentStatus === 'paid' ? 'Paid' : sale.paymentStatus === 'partial' ? `${formatCurrency(sale.balance)} due` : 'Credit'}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center text-slate-400 text-xs">{sale.customerName}</td>
@@ -203,13 +209,22 @@ export default function Sales() {
             <label className="text-xs font-semibold text-slate-400 mb-1 block">Payment Method</label>
             <div className="flex gap-2">
               {['cash', 'mobile', 'credit'].map(m => (
-                <button key={m} onClick={() => setForm({ ...form, paymentMethod: m })}
+                <button key={m} onClick={() => setForm({ ...form, paymentMethod: m, paidAmount: m === 'credit' ? 0 : form.total })}
                   className={`flex-1 p-2.5 rounded-xl text-xs font-medium capitalize transition-all ${form.paymentMethod === m ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-slate-400 border border-transparent hover:bg-white/10'}`}>
                   {m}
                 </button>
               ))}
             </div>
           </div>
+          {form.paymentMethod === 'credit' && (
+            <div>
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">Amount Paid Now (TZS)</label>
+              <input className="form-input" type="number" min={0} max={form.total} placeholder="0" value={form.paidAmount} onChange={e => setForm({ ...form, paidAmount: Number(e.target.value) })} />
+              {form.paidAmount < form.total && (
+                <p className="text-xs text-yellow-400 mt-1">Balance: {formatCurrency(form.total - form.paidAmount)}</p>
+              )}
+            </div>
+          )}
           <button onClick={handleSave} className="btn-primary w-full justify-center py-3 text-base" disabled={saving}>
             {saving ? 'Recording...' : 'Complete Sale'}
           </button>

@@ -9,6 +9,9 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, default: 0 },
   costPrice: { type: Number, default: 0 },
   unit: { type: String, default: '' },
+  expiryDate: { type: String, default: '' },
+  batch: { type: String, default: '' },
+  warehouse: { type: String, default: '' },
   visible: { type: String, default: 'true' },
   dateAdded: { type: String, default: '' },
 }, { timestamps: true });
