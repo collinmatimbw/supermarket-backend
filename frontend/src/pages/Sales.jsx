@@ -280,15 +280,17 @@ export default function Sales() {
               )}
             </div>
           )}
-          {employees.length > 0 && (
-            <div>
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Sold By</label>
+          <div>
+            <label className="text-xs font-semibold text-slate-400 mb-1 block">Sold By</label>
+            {employees.length > 0 ? (
               <select className="form-input" value={form.soldBy} onChange={e => setForm({ ...form, soldBy: e.target.value })}>
                 <option value="">Select employee</option>
                 {employees.filter(e => e.status === 'active').map(e => <option key={e.id} value={e.name}>{e.name}</option>)}
               </select>
-            </div>
-          )}
+            ) : (
+              <input className="form-input" placeholder="Employee name (optional)" value={form.soldBy} onChange={e => setForm({ ...form, soldBy: e.target.value })} />
+            )}
+          </div>
           {form.customerName && form.customerName !== 'Walk-in' && form.customerPhone && (
             <label className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 cursor-pointer">
               <input type="checkbox" checked={form.sendReceipt} onChange={e => setForm({ ...form, sendReceipt: e.target.checked })}
