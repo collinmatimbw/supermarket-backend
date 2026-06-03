@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { productId, productName, category, quantity, price, total, profit, customerName, customerId, date, paymentMethod, paidAmount, notes } = req.body;
+    const { productId, productName, category, quantity, price, total, profit, customerName, customerId, customerPhone, date, paymentMethod, paidAmount, soldBy, notes } = req.body;
     const saleTotal = Number(total) || 0;
     const paid = Number(paidAmount) || (paymentMethod === 'credit' ? 0 : saleTotal);
     const balance = Math.max(0, saleTotal - paid);
@@ -22,9 +22,9 @@ router.post('/', async (req, res) => {
       userId: req.user.email, id: 'S' + uuidv4().slice(0, 8).toUpperCase(),
       productId: productId || '', productName: productName || '', category: category || '',
       quantity: Number(quantity) || 0, price: Number(price) || 0, total: saleTotal,
-      profit: Number(profit) || 0, customerName: customerName || 'Walk-in', customerId: customerId || '',
+      profit: Number(profit) || 0, customerName: customerName || 'Walk-in', customerId: customerId || '', customerPhone: customerPhone || '',
       date: date || new Date().toISOString().split('T')[0],
-      paymentMethod: paymentMethod || 'cash', paymentStatus, paidAmount: paid, balance, notes: notes || '',
+      paymentMethod: paymentMethod || 'cash', paymentStatus, paidAmount: paid, balance, soldBy: soldBy || '', notes: notes || '',
     });
     await sale.save();
     await Product.findOneAndUpdate({ userId: req.user.email, id: productId }, { $inc: { quantity: -(Number(quantity) || 0) } });

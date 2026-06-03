@@ -1,18 +1,19 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, ShoppingCart, Trash2, Filter, Download } from 'lucide-react';
+import { Plus, Search, ShoppingCart, Trash2, Filter, Download, MessageCircle, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { LoadingState, EmptyState } from '../components/LoadingState';
 import api from '../utils/api';
-import { formatCurrency, formatDate, exportToCSV } from '../utils/helpers';
+import { formatCurrency, formatDate, exportToCSV, sendWhatsApp, formatReceipt, formatDebtReminder } from '../utils/helpers';
 
-const emptyForm = { productId: '', productName: '', quantity: 1, price: 0, total: 0, profit: 0, customerName: 'Walk-in', paymentMethod: 'cash', paidAmount: 0 };
+const emptyForm = { productId: '', productName: '', quantity: 1, price: 0, total: 0, profit: 0, customerName: 'Walk-in', customerPhone: '', paymentMethod: 'cash', paidAmount: 0, soldBy: '', sendReceipt: false };
 
 export default function Sales() {
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -25,10 +26,12 @@ export default function Sales() {
       api.get('/sales'),
       api.get('/products'),
       api.get('/customers'),
-    ]).then(([s, p, c]) => {
+      api.get('/employees'),
+    ]).then(([s, p, c, e]) => {
       setSales(s.data.data);
       setProducts(p.data.data);
       setCustomers(c.data.data);
+      setEmployees(e.data.data || []);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -72,7 +75,11 @@ export default function Sales() {
     if (!form.productId && !form.productName) return toast.error('Select a product');
     setSaving(true);
     try {
-      await api.post('/sales', form);
+      const { data } = await api.post('/sales', form);
+      const sale = data.data;
+      if (form.sendReceipt && sale) {
+        sendWhatsApp(form.customerPhone, formatReceipt(sale));
+      }
       toast.success('Sale recorded');
       setModalOpen(false);
       load();
@@ -152,6 +159,7 @@ export default function Sales() {
                   <th className="text-right py-3 px-4 font-medium">Profit</th>
                   <th className="text-center py-3 px-4 font-medium">Payment</th>
                   <th className="text-center py-3 px-4 font-medium">Status</th>
+                  <th className="text-center py-3 px-4 font-medium">Sold By</th>
                   <th className="text-center py-3 px-4 font-medium">Customer</th>
                   <th className="text-center py-3 px-4 font-medium"></th>
                 </tr>
@@ -174,11 +182,30 @@ export default function Sales() {
                         {sale.paymentStatus === 'paid' ? 'Paid' : sale.paymentStatus === 'partial' ? `${formatCurrency(sale.balance)} due` : 'Credit'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center text-slate-400 text-xs">{sale.customerName}</td>
+                    <td className="py-3 px-4 text-center text-slate-400 text-xs">{sale.soldBy || '—'}</td>
+                    <td className="py-3 px-4 text-center text-slate-400 text-xs">
+                      <div className="flex items-center justify-center gap-1">
+                        <span>{sale.customerName}</span>
+                        {sale.customerName && sale.customerName !== 'Walk-in' && sale.balance > 0 && (
+                          <button onClick={() => sendWhatsApp(sale.customerPhone || '', formatDebtReminder(sale))}
+                            className="p-1 rounded text-green-400 hover:bg-green-500/10 transition-colors" title="Send debt reminder">
+                            <MessageCircle size={11} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-3 px-4 text-center">
-                      <button onClick={() => handleDelete(sale.id)} className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
-                        <Trash2 size={13} />
-                      </button>
+                      <div className="flex items-center justify-center gap-1">
+                        {sale.customerPhone && (
+                          <button onClick={() => sendWhatsApp(sale.customerPhone, formatReceipt(sale))}
+                            className="p-1.5 rounded-lg text-green-500 hover:bg-green-500/10 transition-colors" title="Send WhatsApp receipt">
+                            <MessageCircle size={12} />
+                          </button>
+                        )}
+                        <button onClick={() => handleDelete(sale.id)} className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -215,11 +242,20 @@ export default function Sales() {
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-400 mb-1 block">Customer</label>
-            <select className="form-input" value={form.customerName} onChange={e => setForm({ ...form, customerName: e.target.value })}>
+            <select className="form-input" value={form.customerName} onChange={e => {
+              const c = customers.find(c => c.name === e.target.value);
+              setForm({ ...form, customerName: e.target.value, customerPhone: c?.phone || '' });
+            }}>
               <option value="Walk-in">Walk-in Customer</option>
               {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
           </div>
+          {(form.customerName && form.customerName !== 'Walk-in') && (
+            <div>
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">Customer Phone</label>
+              <input className="form-input" placeholder="Phone for WhatsApp receipt" value={form.customerPhone} onChange={e => setForm({ ...form, customerPhone: e.target.value })} />
+            </div>
+          )}
           <div>
             <label className="text-xs font-semibold text-slate-400 mb-1 block">Payment Method</label>
             <div className="flex gap-2">
@@ -239,6 +275,22 @@ export default function Sales() {
                 <p className="text-xs text-yellow-400 mt-1">Balance: {formatCurrency(form.total - form.paidAmount)}</p>
               )}
             </div>
+          )}
+          {employees.length > 0 && (
+            <div>
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">Sold By</label>
+              <select className="form-input" value={form.soldBy} onChange={e => setForm({ ...form, soldBy: e.target.value })}>
+                <option value="">Select employee</option>
+                {employees.filter(e => e.status === 'active').map(e => <option key={e.id} value={e.name}>{e.name}</option>)}
+              </select>
+            </div>
+          )}
+          {form.customerName && form.customerName !== 'Walk-in' && form.customerPhone && (
+            <label className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 cursor-pointer">
+              <input type="checkbox" checked={form.sendReceipt} onChange={e => setForm({ ...form, sendReceipt: e.target.checked })}
+                className="rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500" />
+              <span className="text-xs text-slate-300">Send WhatsApp receipt to customer</span>
+            </label>
           )}
           <button onClick={handleSave} className="btn-primary w-full justify-center py-3 text-base" disabled={saving}>
             {saving ? 'Recording...' : 'Complete Sale'}

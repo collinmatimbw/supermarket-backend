@@ -14,6 +14,7 @@ const settingsRouter = require('./routes/settings');
 const leadsRouter = require('./routes/leads');
 const tasksRouter = require('./routes/tasks');
 const expensesRouter = require('./routes/expenses');
+const employeesRouter = require('./routes/employees');
 const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
@@ -36,6 +37,7 @@ app.use('/api/settings', authMiddleware, settingsRouter);
 app.use('/api/leads', authMiddleware, leadsRouter);
 app.use('/api/tasks', authMiddleware, tasksRouter);
 app.use('/api/expenses', authMiddleware, expensesRouter);
+app.use('/api/employees', authMiddleware, employeesRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -25,6 +25,47 @@ export const CATEGORIES = [
   'Spices', 'Condiments', 'Snacks', 'Cleaning', 'Personal Care', 'Other'
 ];
 
+export const sendWhatsApp = (phone, message) => {
+  if (!phone) return;
+  const cleaned = phone.replace(/[^0-9]/g, '');
+  const url = `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
+  window.open(url, '_blank');
+};
+
+export const formatReceipt = (sale, businessName = 'SKYC CRM') => {
+  const lines = [
+    `🧾 *${businessName}*`,
+    `─────────────────`,
+    `Product: ${sale.productName || 'N/A'}`,
+    `Qty: ${sale.quantity} × TZS ${(sale.price || 0).toLocaleString()}`,
+    `Total: TZS ${(sale.total || 0).toLocaleString()}`,
+    `Payment: ${(sale.paymentMethod || 'cash').toUpperCase()}`,
+    sale.balance > 0 ? `Balance Due: TZS ${sale.balance.toLocaleString()}` : '',
+    `─────────────────`,
+    `Date: ${sale.date || new Date().toISOString().split('T')[0]}`,
+    `Thank you for your purchase!`,
+  ].filter(Boolean).join('\n');
+  return lines;
+};
+
+export const formatDebtReminder = (sale, businessName = 'SKYC CRM') => {
+  return [
+    `🔔 *Payment Reminder - ${businessName}*`,
+    `─────────────────`,
+    `Dear ${sale.customerName || 'Customer'},`,
+    ``,
+    `This is a reminder of your outstanding balance:`,
+    `Product: ${sale.productName || 'N/A'}`,
+    `Total: TZS ${(sale.total || 0).toLocaleString()}`,
+    `Paid: TZS ${(sale.paidAmount || 0).toLocaleString()}`,
+    `*Balance: TZS ${(sale.balance || 0).toLocaleString()}*`,
+    ``,
+    `Please clear the balance at your earliest convenience.`,
+    `─────────────────`,
+    `${businessName}`,
+  ].join('\n');
+};
+
 export const exportToCSV = (data, filename, columns) => {
   if (!data || data.length === 0) return;
   const headers = columns.map(c => c.label).join(',');

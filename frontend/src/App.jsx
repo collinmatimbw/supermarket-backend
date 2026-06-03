@@ -18,6 +18,7 @@ import Leads from './pages/Leads';
 import Tasks from './pages/Tasks';
 import Reports from './pages/Reports';
 import Expenses from './pages/Expenses';
+import Employees from './pages/Employees';
 import Settings from './pages/Settings';
 import ManageUsers from './pages/ManageUsers';
 
@@ -107,6 +108,7 @@ export default function App() {
             <Route path="/tasks" element={<ProtectedRoute><Layout><Tasks /></Layout></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Layout><Expenses /></Layout></ProtectedRoute>} />
+            <Route path="/employees" element={<ProtectedRoute><Layout><Employees /></Layout></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
             <Route path="/manage-users" element={<ProtectedRoute><Layout><ManageUsers /></Layout></ProtectedRoute>} />
           </Routes>
