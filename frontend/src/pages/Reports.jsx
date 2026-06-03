@@ -55,6 +55,18 @@ export default function Reports() {
   const topProducts = Object.entries(productSales).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, revenue]) => ({ name, revenue }));
   const productLabels = topProducts.map(p => p.name.length > 12 ? p.name.slice(0, 12) + '...' : p.name);
 
+  // Best selling hours
+  const hourBuckets = Array(24).fill(0);
+  sales.forEach(s => {
+    if (s.createdAt) {
+      const h = new Date(s.createdAt).getHours();
+      if (h >= 0 && h < 24) hourBuckets[h] += Number(s.total || 0);
+    }
+  });
+  const maxHour = Math.max(...hourBuckets);
+  const peakHour = hourBuckets.indexOf(maxHour);
+  const peakLabel = peakHour >= 0 ? `${peakHour}:00 - ${peakHour + 1}:00` : '—';
+
   const chartOpts = {
     responsive: true, maintainAspectRatio: false,
     plugins: { legend: { labels: { color: '#64748b', font: { family: 'Sora', size: 11 } } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1, titleColor: '#94a3b8', bodyColor: '#f1f5f9', padding: 12 } },
@@ -137,6 +149,27 @@ export default function Reports() {
             ) : <div className="flex items-center justify-center h-full text-slate-600 text-sm">No data</div>}
           </div>
         </div>
+      </div>
+
+      {/* Best Selling Hours */}
+      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-white">Best Selling Hours</h3>
+          <div className="text-right">
+            <p className="text-xs text-slate-500">Peak: <span className="text-emerald-400 font-medium">{peakLabel}</span></p>
+          </div>
+        </div>
+        <div style={{ height: 180 }}>
+          <Bar data={{
+            labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+            datasets: [{ label: 'Revenue', data: hourBuckets, backgroundColor: hourBuckets.map((v, i) => i === peakHour ? 'rgba(110,231,183,0.9)' : v > 0 ? 'rgba(110,231,183,0.3)' : 'rgba(255,255,255,0.03)'), borderRadius: 4 }]
+          }} options={{
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1, titleColor: '#94a3b8', bodyColor: '#f1f5f9', padding: 12 } },
+            scales: { x: { grid: { display: false }, ticks: { color: '#475569', font: { size: 9 }, stepSize: 3 } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475569', font: { size: 10 }, callback: v => 'TZS ' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v) } } }
+          }} />
+        </div>
+        <p className="text-xs text-slate-500 mt-2 text-center">Sales revenue by hour of day — schedule staff for peak hours</p>
       </div>
 
       {/* Top Products Table */}

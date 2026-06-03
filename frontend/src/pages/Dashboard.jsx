@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Clock, Users, Target, Package, Phone, MessageCircle, Plus, TrendingDown, CreditCard, Wallet } from 'lucide-react';
-import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
+import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Clock, Users, Target, Package, Phone, MessageCircle, Plus, TrendingDown, CreditCard, Wallet, BarChart3, FileText, X, Calendar } from 'lucide-react';
+import { Line, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import StatCard from '../components/StatCard';
+import Modal from '../components/Modal';
 import { LoadingState } from '../components/LoadingState';
 import api from '../utils/api';
 import { formatCurrency, formatDate, isLowStock } from '../utils/helpers';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
 export default function Dashboard() {
   const { t } = useLanguage();
@@ -19,8 +20,10 @@ export default function Dashboard() {
   const [leads, setLeads] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [expensesToday, setExpensesToday] = useState(0);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [eodOpen, setEodOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -37,7 +40,9 @@ export default function Dashboard() {
       setLeads(l.data.data || []);
       setTasks(t.data.data || []);
       setAnalytics(a.data.data);
-      setExpenses(e.data.data || []);
+      const exps = e.data.data || [];
+      setExpenses(exps);
+      setExpensesToday(exps.filter(ex => ex.date === today).reduce((s, ex) => s + Number(ex.amount || 0), 0));
     }).finally(() => setLoading(false));
   }, []);
 
@@ -62,6 +67,30 @@ export default function Dashboard() {
   const overdueTasks = pendingTasks.filter(t => t.dueDate && t.dueDate < today);
 
   const recentSales = sales.slice(0, 5);
+
+  // Dead stock - products not sold in 60 days
+  const sixtyDaysAgo = new Date(); sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  const deadStockItems = products.filter(p => {
+    const sold = sales.some(s => (s.productId === p.id || s.productName === p.name) && new Date(s.date) >= sixtyDaysAgo);
+    return !sold;
+  });
+
+  // Best selling hours - group today's sales by hour from createdAt
+  const hourBuckets = Array(24).fill(0);
+  sales.forEach(s => {
+    if (s.createdAt) {
+      const h = new Date(s.createdAt).getHours();
+      if (h >= 0 && h < 24) hourBuckets[h] += Number(s.total || 0);
+    }
+  });
+
+  // End-of-day summary data
+  const cashToday = todaySales.filter(s => s.paymentMethod === 'cash').reduce((sum, s) => sum + Number(s.total || 0), 0);
+  const mobileToday = todaySales.filter(s => s.paymentMethod === 'mobile').reduce((sum, s) => sum + Number(s.total || 0), 0);
+  const creditToday = todaySales.filter(s => s.paymentMethod === 'credit').reduce((sum, s) => sum + Number(s.total || 0), 0);
+  const eodExpectedCash = cashToday - expensesToday;
+  const topProductToday = [...todaySales].sort((a, b) => b.total - a.total)[0];
+  const todayProfit = todaySales.reduce((sum, s) => sum + Number(s.profit || 0), 0);
 
   const chartOpts = {
     responsive: true, maintainAspectRatio: false,
@@ -152,17 +181,17 @@ export default function Dashboard() {
                 <ShoppingCart size={20} className="mx-auto mb-1" />
                 <span className="text-xs font-medium">New Sale</span>
               </button>
+              <button onClick={() => setEodOpen(true)} className="p-3 rounded-xl bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors text-center">
+                <FileText size={20} className="mx-auto mb-1" />
+                <span className="text-xs font-medium">End of Day</span>
+              </button>
               <button onClick={() => navigate('/products')} className="p-3 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-center">
                 <Package size={20} className="mx-auto mb-1" />
                 <span className="text-xs font-medium">Add Product</span>
               </button>
-              <button onClick={() => navigate('/customers')} className="p-3 rounded-xl bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors text-center">
-                <Users size={20} className="mx-auto mb-1" />
-                <span className="text-xs font-medium">Customers</span>
-              </button>
-              <button onClick={() => navigate('/leads')} className="p-3 rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors text-center">
-                <Target size={20} className="mx-auto mb-1" />
-                <span className="text-xs font-medium">New Lead</span>
+              <button onClick={() => navigate('/expenses')} className="p-3 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-center">
+                <TrendingDown size={20} className="mx-auto mb-1" />
+                <span className="text-xs font-medium">Add Expense</span>
               </button>
             </div>
           </div>
@@ -263,6 +292,30 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Dead Stock Alert */}
+      {deadStockItems.length > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle size={16} className="text-amber-400" />
+            <h3 className="text-sm font-semibold text-amber-400">Dead Stock — No Sale in 60 Days</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {deadStockItems.slice(0, 4).map(p => (
+              <div key={p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-white/5">
+                <div>
+                  <p className="text-sm font-medium text-amber-200">{p.name}</p>
+                  <p className="text-xs text-slate-500">{p.quantity} in stock · TZS {((p.price || 0) * (p.quantity || 0)).toLocaleString()} tied up</p>
+                </div>
+                <button onClick={() => navigate('/products')} className="text-xs text-emerald-400 hover:underline">Review</button>
+              </div>
+            ))}
+            {deadStockItems.length > 4 && (
+              <p className="text-xs text-slate-500 mt-2">+{deadStockItems.length - 4} more items</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Low Stock Alert */}
       {lowStockItems.length > 0 && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-5">
@@ -286,6 +339,90 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* End-of-Day Summary Modal */}
+      <Modal open={eodOpen} onClose={() => setEodOpen(false)} title={`End of Day — ${today}`} size="lg">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
+              <p className="text-xs text-emerald-400 font-medium uppercase">Total Sales</p>
+              <p className="text-xl font-bold text-white mt-1">{formatCurrency(todayRevenue)}</p>
+              <p className="text-xs text-slate-500">{todaySales.length} transactions</p>
+            </div>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-center">
+              <p className="text-xs text-blue-400 font-medium uppercase">Cash</p>
+              <p className="text-xl font-bold text-white mt-1">{formatCurrency(cashToday)}</p>
+              <p className="text-xs text-slate-500">In till today</p>
+            </div>
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 text-center">
+              <p className="text-xs text-purple-400 font-medium uppercase">Mobile Money</p>
+              <p className="text-xl font-bold text-white mt-1">{formatCurrency(mobileToday)}</p>
+              <p className="text-xs text-slate-500">M-Pesa / Tigo / Airtel</p>
+            </div>
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-center">
+              <p className="text-xs text-amber-400 font-medium uppercase">Credit Sales</p>
+              <p className="text-xl font-bold text-white mt-1">{formatCurrency(creditToday)}</p>
+              <p className="text-xs text-slate-500">{todaySales.filter(s => s.paymentMethod === 'credit').length} debtors</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white/5 rounded-xl p-4">
+              <p className="text-xs text-slate-500 mb-1">Today's Expenses</p>
+              <p className="text-lg font-bold text-red-400">{formatCurrency(expensesToday)}</p>
+            </div>
+            <div className="bg-white/5 rounded-xl p-4">
+              <p className="text-xs text-slate-500 mb-1">Today's Profit</p>
+              <p className="text-lg font-bold text-emerald-400">{formatCurrency(todayProfit)}</p>
+            </div>
+            <div className="bg-white/5 rounded-xl p-4">
+              <p className="text-xs text-slate-500 mb-1">Expected Cash in Till</p>
+              <p className={`text-lg font-bold ${eodExpectedCash >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(eodExpectedCash)}</p>
+              <p className="text-xs text-slate-500">Cash sales − expenses</p>
+            </div>
+            <div className="bg-white/5 rounded-xl p-4">
+              <p className="text-xs text-slate-500 mb-1">Net for Today</p>
+              <p className={`text-lg font-bold ${todayRevenue - expensesToday >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(todayRevenue - expensesToday)}</p>
+              <p className="text-xs text-slate-500">Revenue − expenses</p>
+            </div>
+          </div>
+
+          {/* Best Selling Hours Today */}
+          <div>
+            <h4 className="text-sm font-semibold text-white mb-2">Sales by Hour Today</h4>
+            <div style={{ height: 120 }}>
+              <Bar data={{
+                labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+                datasets: [{ label: 'Revenue', data: hourBuckets, backgroundColor: hourBuckets.map(v => v > 0 ? 'rgba(110,231,183,0.7)' : 'rgba(255,255,255,0.04)'), borderRadius: 4 }]
+              }} options={{
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { grid: { display: false }, ticks: { color: '#475569', font: { size: 9 }, stepSize: 3 } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475569', font: { size: 9 }, callback: v => 'TZS ' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v) } } }
+              }} />
+            </div>
+          </div>
+
+          {topProductToday && (
+            <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4">
+              <p className="text-xs text-slate-500 mb-1">Today's Top Seller</p>
+              <p className="text-sm font-bold text-white">{topProductToday.productName} — {formatCurrency(topProductToday.total)}</p>
+              <p className="text-xs text-slate-500">{topProductToday.quantity} units</p>
+            </div>
+          )}
+
+          {outstandingDebts > 0 && (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-center gap-3">
+              <CreditCard size={18} className="text-yellow-400 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-yellow-400">{formatCurrency(outstandingDebts)} outstanding across {creditSales.length} debtors</p>
+                <button onClick={() => { setEodOpen(false); navigate('/sales'); }} className="text-xs text-emerald-400 hover:underline mt-0.5">Collect payments →</button>
+              </div>
+            </div>
+          )}
+
+          <button onClick={() => setEodOpen(false)} className="btn-primary w-full justify-center">Close Summary</button>
+        </div>
+      </Modal>
     </div>
   );
 }
