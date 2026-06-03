@@ -25,6 +25,58 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [eodOpen, setEodOpen] = useState(false);
 
+  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  const printReceipt = () => {
+    const w = window.open('', '_blank');
+    const p = (v) => formatCurrency(v);
+    const line = (a, b) => `<tr><td style="text-align:left">${a}</td><td style="text-align:right">${b}</td></tr>`;
+    w.document.write(`<!DOCTYPE html><html><head><title>End of Day - ${today}</title>
+    <style>
+      @page { margin: 0; size: 80mm auto; }
+      body { font-family: 'Courier New', monospace; font-size: 12px; width: 72mm; margin: 0 auto; padding: 8mm 4mm; color: #000; text-align: center; }
+      h1 { font-size: 16px; font-weight: bold; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 2px; }
+      h2 { font-size: 11px; font-weight: normal; margin: 0 0 4px; color: #555; }
+      .divider { border-top: 1px dashed #999; margin: 6px 0; }
+      .divider-solid { border-top: 1px solid #333; margin: 6px 0; }
+      table { width: 100%; border-collapse: collapse; }
+      td { padding: 1px 0; font-size: 12px; }
+      .total td { font-weight: bold; font-size: 14px; padding-top: 2px; }
+      .section-title { font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #555; text-align: left; padding-top: 4px; }
+      .footer { font-size: 10px; color: #888; margin-top: 8px; }
+      .big { font-size: 18px; font-weight: bold; }
+    </style></head><body>
+    <h1>SKYC CRM</h1>
+    <h2>${dateStr}</h2>
+    <h2>${timeStr}</h2>
+    <div class="divider"></div>
+    <table>${line('Total Sales', p(todayRevenue))}
+    <tr><td style="text-align:left;font-size:10px;color:#666">(${todaySales.length} transactions)</td><td></td></tr>
+    <tr><td style="padding-top:4px"></td></tr>
+    ${line('Cash', p(cashToday))}
+    ${line('Mobile Money', p(mobileToday))}
+    ${line('Credit Sales', p(creditToday))}
+    </table>
+    <div class="divider"></div>
+    <table>${line('Today\'s Expenses', p(expensesToday))}
+    ${line('Today\'s Profit', p(todayProfit))}
+    </table>
+    <div class="divider"></div>
+    <table>${line('Expected Cash in Till', p(eodExpectedCash))}
+    <tr class="total"><td>Net Today</td><td>${p(todayRevenue - expensesToday)}</td></tr>
+    </table>
+    ${topProductToday ? `<div class="divider"></div><div style="text-align:left;font-size:11px"><span style="color:#555;font-weight:bold">Top Seller:</span> ${topProductToday.productName} — ${p(topProductToday.total)}</div>` : ''}
+    ${outstandingDebts > 0 ? `<div class="divider"></div><div style="text-align:left;font-size:11px;color:#c00"><strong>Outstanding Debt:</strong> ${p(outstandingDebts)} (${creditSales.length} debtors)</div>` : ''}
+    <div class="divider-solid"></div>
+    <div class="footer">Thank you for using SKYC CRM</div>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); w.close(); }, 300);
+  };
+
   useEffect(() => {
     setLoading(true);
     Promise.all([
@@ -48,7 +100,6 @@ export default function Dashboard() {
 
   if (loading) return <LoadingState message="Loading dashboard..." />;
 
-  const today = new Date().toISOString().split('T')[0];
   const todaySales = sales.filter(s => s.date === today);
   const todayRevenue = todaySales.reduce((sum, s) => sum + Number(s.total || 0), 0);
   const monthlySales = sales.filter(s => s.date?.startsWith(today.slice(0, 7)));
@@ -420,7 +471,10 @@ export default function Dashboard() {
             </div>
           )}
 
-          <button onClick={() => setEodOpen(false)} className="btn-primary w-full justify-center">Close Summary</button>
+          <div className="flex gap-2">
+            <button onClick={printReceipt} className="btn-ghost flex-1 justify-center"><FileText size={14} className="mr-1.5" />Print Receipt</button>
+            <button onClick={() => setEodOpen(false)} className="btn-primary flex-1 justify-center">Close</button>
+          </div>
         </div>
       </Modal>
     </div>
