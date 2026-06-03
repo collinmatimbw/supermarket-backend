@@ -21,7 +21,6 @@ export default function Employees() {
   const [saving, setSaving] = useState(false);
   const [perfPeriod, setPerfPeriod] = useState('month');
   const [showPerf, setShowPerf] = useState(false);
-  const [pinGate, setPinGate] = useState(true);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
   const [setPinOpen, setSetPinOpen] = useState(false);
@@ -83,7 +82,6 @@ export default function Employees() {
   const handlePinUnlock = () => {
     if (pinInput === storedPin) {
       sessionStorage.setItem('skyc_emp_unlocked', 'true');
-      setPinGate(false);
       setPinError('');
       setPinInput('');
     } else {
@@ -109,33 +107,41 @@ export default function Employees() {
   // PIN Gate
   if (!unlocked && storedPin) {
     return (
-      <div className="animate-fade-in min-h-[60vh] flex items-center justify-center">
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 max-w-sm w-full text-center">
-          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
-            <Lock size={28} className="text-amber-400" />
-          </div>
-          <h2 className="text-lg font-bold text-white mb-1">Employee Section Locked</h2>
-          <p className="text-sm text-slate-500 mb-6">Enter PIN to view employee data</p>
-          <input className="form-input text-center text-lg tracking-widest mb-3" type="password" maxLength={6} placeholder="••••" value={pinInput} onChange={e => setPinInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handlePinUnlock()} autoFocus />
-          {pinError && <p className="text-xs text-red-400 mb-3">{pinError}</p>}
-          <button onClick={handlePinUnlock} className="btn-primary w-full justify-center mb-3">Unlock</button>
-          <button onClick={() => setSetPinOpen(true)} className="text-xs text-slate-500 hover:text-slate-300"><Settings size={11} className="mr-1 inline" />Manage PIN</button>
-          <Modal open={setPinOpen} onClose={() => setSetPinOpen(false)} title={storedPin ? 'Change Employee PIN' : 'Set Employee PIN'}>
-            <div className="space-y-4">
-              <p className="text-xs text-slate-500">Set a PIN to restrict access to employee data. Only people with the PIN can view salaries, commissions, and targets.</p>
-              <div>
-                <label className="text-xs font-semibold text-slate-400 mb-1 block">New PIN</label>
-                <input className="form-input text-center text-lg tracking-widest" type="password" maxLength={6} placeholder="••••" value={newPin} onChange={e => setNewPin(e.target.value)} />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-400 mb-1 block">Confirm PIN</label>
-                <input className="form-input text-center text-lg tracking-widest" type="password" maxLength={6} placeholder="••••" value={confirmPin} onChange={e => setConfirmPin(e.target.value)} />
-              </div>
-              <button onClick={handleSetPin} className="btn-primary w-full justify-center">{storedPin ? 'Change PIN' : 'Set PIN'}</button>
-              {storedPin && <button onClick={handleRemovePin} className="btn-danger w-full justify-center">Remove PIN Lock</button>}
+      <div className="animate-fade-in min-h-[70vh] flex items-center justify-center">
+        <div className="relative">
+          <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-emerald-500/20 to-amber-500/20 rounded-3xl blur-xl opacity-60" />
+          <div className="relative bg-slate-900/90 border border-slate-700/60 rounded-2xl p-8 max-w-sm w-full text-center backdrop-blur-sm">
+            <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-amber-500/20 to-yellow-500/10 border border-amber-500/20 flex items-center justify-center">
+              <Lock size={28} className="text-amber-400" />
             </div>
-          </Modal>
+            <h2 className="text-lg font-bold text-white mb-1">Section Locked</h2>
+            <p className="text-sm text-slate-500 mb-7">Enter PIN to view employee data</p>
+            <input className="form-input text-center text-lg tracking-[0.3em] mb-3 bg-slate-800/80 border-slate-600/50 focus:border-amber-500/40" type="password" maxLength={6} placeholder="• • • •" value={pinInput} onChange={e => setPinInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handlePinUnlock()} autoFocus />
+            {pinError && <p className="text-xs text-red-400 mb-3 flex items-center justify-center gap-1"><span className="w-1 h-1 rounded-full bg-red-400 inline-block" />{pinError}</p>}
+            <button onClick={handlePinUnlock} className="w-full py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 hover:from-amber-400 hover:to-yellow-400 transition-all mb-4">Unlock</button>
+            <button onClick={() => setSetPinOpen(true)} className="text-xs text-slate-600 hover:text-slate-300 transition-colors">
+              <Settings size={12} className="mr-1.5 inline-block" />Manage PIN
+            </button>
+          </div>
         </div>
+        <Modal open={setPinOpen} onClose={() => setSetPinOpen(false)} title={storedPin ? 'Change PIN' : 'Set PIN'}>
+          <div className="space-y-5">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+              <Lock size={16} className="text-amber-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-slate-400 leading-relaxed">Set a PIN to lock employee data. Only people with the PIN can view salaries, commissions, and targets.</p>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-400 mb-1.5 block">New PIN</label>
+              <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-amber-500/40" type="password" maxLength={6} placeholder="• • • •" value={newPin} onChange={e => setNewPin(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Confirm PIN</label>
+              <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-amber-500/40" type="password" maxLength={6} placeholder="• • • •" value={confirmPin} onChange={e => setConfirmPin(e.target.value)} />
+            </div>
+            <button onClick={handleSetPin} className="btn-primary w-full justify-center">{storedPin ? 'Change PIN' : 'Set PIN'}</button>
+            {storedPin && <button onClick={handleRemovePin} className="btn-danger w-full justify-center">Remove PIN Lock</button>}
+          </div>
+        </Modal>
       </div>
     );
   }
@@ -334,6 +340,25 @@ export default function Employees() {
           <button onClick={handleSave} className="btn-primary w-full justify-center" disabled={saving}>
             {saving ? 'Saving...' : editing ? 'Update Employee' : 'Add Employee'}
           </button>
+        </div>
+      </Modal>
+
+      <Modal open={setPinOpen} onClose={() => setSetPinOpen(false)} title={storedPin ? 'Change PIN' : 'Set PIN'}>
+        <div className="space-y-5">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+            <Lock size={16} className="text-amber-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-slate-400 leading-relaxed">Set a PIN to lock employee data. Only people with the PIN can view salaries, commissions, and targets.</p>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-400 mb-1.5 block">New PIN</label>
+            <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-amber-500/40" type="password" maxLength={6} placeholder="• • • •" value={newPin} onChange={e => setNewPin(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Confirm PIN</label>
+            <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-amber-500/40" type="password" maxLength={6} placeholder="• • • •" value={confirmPin} onChange={e => setConfirmPin(e.target.value)} />
+          </div>
+          <button onClick={handleSetPin} className="btn-primary w-full justify-center">{storedPin ? 'Change PIN' : 'Set PIN'}</button>
+          {storedPin && <button onClick={handleRemovePin} className="btn-danger w-full justify-center">Remove PIN Lock</button>}
         </div>
       </Modal>
     </div>
