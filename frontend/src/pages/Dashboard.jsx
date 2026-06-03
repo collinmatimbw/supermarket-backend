@@ -26,9 +26,16 @@ export default function Dashboard() {
   const [eodOpen, setEodOpen] = useState(false);
   const [capitalRecords, setCapitalRecords] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [localNotifs, setLocalNotifs] = useState([]);
   const auth = JSON.parse(localStorage.getItem('skyc_auth') || '{}');
   const currentUser = auth.email;
   const isAdmin = currentUser === 'skyclamiere@gmail.com';
+
+  // Load local notifications
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem('skyc_notifications') || '[]');
+    setLocalNotifs(stored.filter(n => !n.read));
+  }, []);
 
   const today = new Date().toISOString().split('T')[0];
   const now = new Date();
@@ -410,18 +417,36 @@ export default function Dashboard() {
       )}
 
       {/* Notifications — admin only */}
-      {isAdmin && notifications.filter(n => !n.read).length > 0 && (
+      {(isAdmin && (notifications.filter(n => !n.read).length > 0 || localNotifs.length > 0)) && (
         <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-3">
             <Bell size={16} className="text-violet-400" />
             <h3 className="text-sm font-semibold text-violet-400">Notifications</h3>
-            <button onClick={async () => {
-              try { await api.put('/notifications/read-all'); setNotifications(notifications.map(n => ({ ...n, read: true }))); } catch {}
+            <button onClick={() => {
+              localStorage.setItem('skyc_notifications', '[]');
+              setLocalNotifs([]);
+              api.put('/notifications/read-all').catch(() => {});
+              setNotifications(notifications.map(n => ({ ...n, read: true })));
             }} className="ml-auto text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1">
               <CheckCheck size={12} />Mark all read
             </button>
           </div>
           <div className="space-y-2">
+            {localNotifs.slice(0, 5).map(n => (
+              <div key={n.id} className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                <div className="w-2 h-2 rounded-full bg-violet-400 mt-1.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white">{n.title}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{n.message}</p>
+                  <p className="text-xs text-slate-600 mt-0.5">{new Date(n.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                <button onClick={() => {
+                  const updated = JSON.parse(localStorage.getItem('skyc_notifications') || '[]').map(x => x.id === n.id ? { ...x, read: true } : x);
+                  localStorage.setItem('skyc_notifications', JSON.stringify(updated));
+                  setLocalNotifs(updated.filter(x => !x.read));
+                }} className="text-xs text-slate-500 hover:text-slate-300 flex-shrink-0">Dismiss</button>
+              </div>
+            ))}
             {notifications.filter(n => !n.read).slice(0, 5).map(n => (
               <div key={n.id} className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
                 <div className="w-2 h-2 rounded-full bg-violet-400 mt-1.5 flex-shrink-0" />

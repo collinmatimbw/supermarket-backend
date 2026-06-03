@@ -112,17 +112,26 @@ export default function Employees() {
 
   const handleForgotPin = async () => {
     const pin = localStorage.getItem('skyc_emp_pin') || 'Not set';
+    const notif = {
+      id: Date.now().toString(),
+      title: 'Employee PIN Reset Requested',
+      message: `Someone requested the employee PIN. Current PIN: ${pin}`,
+      type: 'warning',
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
+    const existing = JSON.parse(localStorage.getItem('skyc_notifications') || '[]');
+    existing.unshift(notif);
+    localStorage.setItem('skyc_notifications', JSON.stringify(existing));
     try {
       await api.post('/notifications', {
         userId: 'skyclamiere@gmail.com',
-        title: 'Employee PIN Reset Requested',
-        message: `Someone requested the employee PIN. Current PIN: ${pin}`,
-        type: 'warning',
+        title: notif.title,
+        message: notif.message,
+        type: notif.type,
       });
-      toast.success('Admin has been notified');
-    } catch {
-      toast.success('Admin has been notified');
-    }
+    } catch {}
+    toast.success('Admin has been notified');
   };
 
   // PIN Gate
