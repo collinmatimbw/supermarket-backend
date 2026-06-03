@@ -13,9 +13,10 @@ import AdminDashboard from './pages/AdminDashboard';
 import Products from './pages/Products';
 import Sales from './pages/Sales';
 import Customers from './pages/Customers';
-import Analytics from './pages/Analytics';
+import Leads from './pages/Leads';
+import Tasks from './pages/Tasks';
+import Reports from './pages/Reports';
 import Settings from './pages/Settings';
-import Predictions from './pages/Predictions';
 import ManageUsers from './pages/ManageUsers';
 
 function ProtectedRoute({ children }) {
@@ -96,11 +97,12 @@ export default function App() {
           <Routes>
             <Route path="/login" element={auth ? <Navigate to="/" replace /> : <AuthPage />} />
             <Route path="/" element={<ProtectedRoute><Layout><DashboardWrapper /></Layout></ProtectedRoute>} />
-            <Route path="/products" element={<ProtectedRoute><Layout><Products /></Layout></ProtectedRoute>} />
-            <Route path="/sales" element={<ProtectedRoute><Layout><Sales /></Layout></ProtectedRoute>} />
             <Route path="/customers" element={<ProtectedRoute><Layout><Customers /></Layout></ProtectedRoute>} />
-            <Route path="/analytics" element={<ProtectedRoute><Layout><Analytics /></Layout></ProtectedRoute>} />
-            <Route path="/predictions" element={<ProtectedRoute><Layout><Predictions /></Layout></ProtectedRoute>} />
+            <Route path="/leads" element={<ProtectedRoute><Layout><Leads /></Layout></ProtectedRoute>} />
+            <Route path="/sales" element={<ProtectedRoute><Layout><Sales /></Layout></ProtectedRoute>} />
+            <Route path="/products" element={<ProtectedRoute><Layout><Products /></Layout></ProtectedRoute>} />
+            <Route path="/tasks" element={<ProtectedRoute><Layout><Tasks /></Layout></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
             <Route path="/manage-users" element={<ProtectedRoute><Layout><ManageUsers /></Layout></ProtectedRoute>} />
           </Routes>

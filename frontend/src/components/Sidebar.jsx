@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, Users,
   BarChart3, Settings, ChevronLeft, ChevronRight,
-  Store, X, Brain, Globe, Sun, Moon, LogOut, Shield
+  Store, X, Target, ClipboardList, FileText, Globe, Sun, Moon, LogOut, Shield
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -19,22 +19,21 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
   const currentUser = auth.email;
   const isAdmin = currentUser === 'skyclamiere@gmail.com'; // Only this email can manage users
 
-  const navItems = isAdmin
-    ? [
-        { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/customers', label: 'Customers', icon: Users },
-        { path: '/settings', label: t('settings'), icon: Settings },
-        { path: '/manage-users', label: 'Manage Users', icon: Shield },
-      ]
-    : [
-        { path: '/', label: t('dashboard'), icon: LayoutDashboard },
-        { path: '/products', label: t('products'), icon: Package },
-        { path: '/sales', label: t('sales'), icon: ShoppingCart },
-        { path: '/customers', label: t('customers'), icon: Users },
-        { path: '/analytics', label: t('analytics'), icon: BarChart3 },
-        { path: '/predictions', label: t('predictions'), icon: Brain },
-        { path: '/settings', label: t('settings'), icon: Settings },
-      ];
+  const navItems = [
+    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/customers', label: 'Customers', icon: Users },
+    { path: '/leads', label: 'Leads', icon: Target },
+    { path: '/sales', label: 'Sales', icon: ShoppingCart },
+    { path: '/products', label: 'Products', icon: Package },
+    { path: '/tasks', label: 'Tasks', icon: ClipboardList },
+    { path: '/reports', label: 'Reports', icon: FileText },
+    { path: '/settings', label: 'Settings', icon: Settings },
+  ];
+
+  // Admin: add Manage Users
+  if (isAdmin) {
+    navItems.push({ path: '/manage-users', label: 'Manage Users', icon: Shield });
+  }
 
   const handleSignOut = () => {
     localStorage.removeItem('skyc_auth');
@@ -138,7 +137,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-slow" />
             <span className="text-xs text-emerald-400 font-medium">{t('systemOnline')}</span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">{t('excelStorageActive')}</p>
+          <p className="text-xs text-slate-500 mt-1">CRM Active</p>
         </div>
       )}
 

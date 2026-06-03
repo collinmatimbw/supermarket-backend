@@ -4,14 +4,13 @@ const productSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   id: { type: String, required: true },
   name: { type: String, required: true },
-  category: { type: String, required: true },
-  buyingPrice: { type: Number, default: 0 },
-  sellingPrice: { type: Number, default: 0 },
+  category: { type: String, default: '' },
   quantity: { type: Number, default: 0 },
-  barcode: { type: String, default: '' },
-  supplier: { type: String, default: '' },
-  dateAdded: { type: String, default: '' },
+  price: { type: Number, default: 0 },
+  costPrice: { type: Number, default: 0 },
+  unit: { type: String, default: '' },
   visible: { type: String, default: 'true' },
+  dateAdded: { type: String, default: '' },
 }, { timestamps: true });
 
 productSchema.index({ userId: 1, id: 1 });

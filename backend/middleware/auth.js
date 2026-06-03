@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 
 async function authMiddleware(req, res, next) {
@@ -5,16 +6,11 @@ async function authMiddleware(req, res, next) {
   if (!authHeader || !authHeader.startsWith('Basic ')) {
     return res.status(401).json({ success: false, message: 'Authentication required' });
   }
-
   try {
     const decoded = Buffer.from(authHeader.split(' ')[1], 'base64').toString('utf-8');
     const [email, password] = decoded.split(':');
-
     const user = await User.findOne({ email, password });
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-
+    if (!user) return res.status(401).json({ success: false, message: 'Invalid credentials' });
     req.user = { email };
     next();
   } catch (err) {

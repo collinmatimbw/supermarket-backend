@@ -7,7 +7,7 @@ const supplierSchema = new mongoose.Schema({
   phone: { type: String, default: '' },
   email: { type: String, default: '' },
   address: { type: String, default: '' },
-  productsSupplied: { type: String, default: '' },
+  product: { type: String, default: '' },
   dateAdded: { type: String, default: '' },
 }, { timestamps: true });
 

@@ -1,4 +1,4 @@
-require('./db'); // Connect to MongoDB
+require('./db');
 
 const express = require('express');
 const cors = require('cors');
@@ -11,6 +11,8 @@ const customersRouter = require('./routes/customers');
 const suppliersRouter = require('./routes/suppliers');
 const predictionsRouter = require('./routes/predictions');
 const settingsRouter = require('./routes/settings');
+const leadsRouter = require('./routes/leads');
+const tasksRouter = require('./routes/tasks');
 const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
@@ -21,16 +23,17 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', authRouter);
-app.use('/api/users', usersRouter); // Signup is public
+app.use('/api/users', usersRouter);
 app.use('/api/products', authMiddleware, productsRouter);
 app.use('/api/sales', authMiddleware, salesRouter);
 app.use('/api/customers', authMiddleware, customersRouter);
 app.use('/api/suppliers', authMiddleware, suppliersRouter);
 app.use('/api/predictions', authMiddleware, predictionsRouter);
 app.use('/api/settings', authMiddleware, settingsRouter);
+app.use('/api/leads', authMiddleware, leadsRouter);
+app.use('/api/tasks', authMiddleware, tasksRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
