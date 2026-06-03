@@ -308,7 +308,7 @@ export default function Customers() {
                             <td className="py-2 pl-2 text-right text-emerald-400 text-xs font-medium">{formatCurrency(s.total)}</td>
                             <td className="py-2 pl-2 text-center">
                               <span className={`text-xs px-1.5 py-0.5 rounded-full ${s.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : s.paymentStatus === 'partial' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                                {s.paymentStatus === 'paid' ? 'Paid' : s.balance > 0 ? `Due ${formatCurrency(s.balance)}` : 'Credit'}
+                                {s.paymentStatus === 'paid' ? 'Paid' : s.balance > 0 ? `Due ${formatCurrency(s.balance)}` : 'Debt'}
                               </span>
                             </td>
                           </tr>

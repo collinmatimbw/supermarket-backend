@@ -183,7 +183,7 @@ export default function Sales() {
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className={`text-xs px-2 py-1 rounded-full capitalize ${sale.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : sale.paymentStatus === 'partial' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                        {sale.paymentStatus === 'paid' ? 'Paid' : sale.paymentStatus === 'partial' ? `${formatCurrency(sale.balance)} due` : 'Credit'}
+                        {sale.paymentStatus === 'paid' ? 'Paid' : sale.paymentStatus === 'partial' ? `${formatCurrency(sale.balance)} due` : 'Debt'}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center text-slate-400 text-xs">{sale.soldBy || '—'}</td>
