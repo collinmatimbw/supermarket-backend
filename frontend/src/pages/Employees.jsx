@@ -110,6 +110,21 @@ export default function Employees() {
     setSetPinOpen(false);
   };
 
+  const handleForgotPin = async () => {
+    const pin = localStorage.getItem('skyc_emp_pin') || 'Not set';
+    try {
+      await api.post('/notifications', {
+        userId: 'skyclamiere@gmail.com',
+        title: 'Employee PIN Reset Requested',
+        message: `Someone requested the employee PIN. Current PIN: ${pin}`,
+        type: 'warning',
+      });
+      toast.success('Admin has been notified');
+    } catch (e) {
+      toast.error('Failed to notify admin');
+    }
+  };
+
   // PIN Gate
   if (!unlocked && storedPin) {
     return (
@@ -125,8 +140,8 @@ export default function Employees() {
             <input className="form-input text-center text-lg tracking-[0.3em] mb-3 bg-slate-800/80 border-slate-600/50 focus:border-amber-500/40" type="password" maxLength={6} placeholder="• • • •" value={pinInput} onChange={e => setPinInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handlePinUnlock()} autoFocus />
             {pinError && <p className="text-xs text-red-400 mb-3 flex items-center justify-center gap-1"><span className="w-1 h-1 rounded-full bg-red-400 inline-block" />{pinError}</p>}
             <button onClick={handlePinUnlock} className="w-full py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 hover:from-amber-400 hover:to-yellow-400 transition-all mb-4">Unlock</button>
-            <button onClick={() => setSetPinOpen(true)} className="text-xs text-slate-600 hover:text-slate-300 transition-colors">
-              <Settings size={12} className="mr-1.5 inline-block" />Manage PIN
+            <button onClick={handleForgotPin} className="text-xs text-slate-600 hover:text-amber-400 transition-colors">
+              <KeyRound size={12} className="mr-1.5 inline-block" />Forgot PIN?
             </button>
           </div>
         </div>

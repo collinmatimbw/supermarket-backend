@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Clock, Users, Target, Package, Phone, MessageCircle, Plus, TrendingDown, CreditCard, Wallet, BarChart3, FileText, X, Calendar, PiggyBank } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Clock, Users, Target, Package, Phone, MessageCircle, Plus, TrendingDown, CreditCard, Wallet, BarChart3, FileText, X, Calendar, PiggyBank, Bell, CheckCheck } from 'lucide-react';
 import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import StatCard from '../components/StatCard';
@@ -25,6 +25,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [eodOpen, setEodOpen] = useState(false);
   const [capitalRecords, setCapitalRecords] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const auth = JSON.parse(localStorage.getItem('skyc_auth') || '{}');
+  const currentUser = auth.email;
+  const isAdmin = currentUser === 'skyclamiere@gmail.com';
 
   const today = new Date().toISOString().split('T')[0];
   const now = new Date();
@@ -88,7 +92,8 @@ export default function Dashboard() {
       api.get('/sales/analytics?period=30d'),
       api.get('/expenses'),
       api.get('/capital'),
-    ]).then(([p, s, l, t, a, e, c]) => {
+      isAdmin ? api.get('/notifications') : Promise.resolve({ data: { data: [] } }),
+    ]).then(([p, s, l, t, a, e, c, n]) => {
       setProducts(p.data.data);
       setSales(s.data.data);
       setLeads(l.data.data || []);
@@ -98,6 +103,7 @@ export default function Dashboard() {
       setExpenses(exps);
       setExpensesToday(exps.filter(ex => ex.date === today).reduce((s, ex) => s + Number(ex.amount || 0), 0));
       setCapitalRecords(c.data.data || []);
+      setNotifications(n.data.data || []);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -399,6 +405,36 @@ export default function Dashboard() {
             {lowStockItems.length > 4 && (
               <p className="text-xs text-slate-500 mt-2">+{lowStockItems.length - 4} more items</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Notifications — admin only */}
+      {isAdmin && notifications.filter(n => !n.read).length > 0 && (
+        <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Bell size={16} className="text-violet-400" />
+            <h3 className="text-sm font-semibold text-violet-400">Notifications</h3>
+            <button onClick={async () => {
+              try { await api.put('/notifications/read-all'); setNotifications(notifications.map(n => ({ ...n, read: true }))); } catch {}
+            }} className="ml-auto text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1">
+              <CheckCheck size={12} />Mark all read
+            </button>
+          </div>
+          <div className="space-y-2">
+            {notifications.filter(n => !n.read).slice(0, 5).map(n => (
+              <div key={n.id} className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                <div className="w-2 h-2 rounded-full bg-violet-400 mt-1.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white">{n.title}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{n.message}</p>
+                  <p className="text-xs text-slate-600 mt-0.5">{new Date(n.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                <button onClick={async () => {
+                  try { await api.put(`/notifications/${n.id}/read`); setNotifications(notifications.map(x => x.id === n.id ? { ...x, read: true } : x)); } catch {}
+                }} className="text-xs text-slate-500 hover:text-slate-300 flex-shrink-0">Dismiss</button>
+              </div>
+            ))}
           </div>
         </div>
       )}
