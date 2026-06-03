@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Clock, Users, Target, Package, Phone, MessageCircle, Plus, TrendingDown, CreditCard, Wallet, BarChart3, FileText, X, Calendar } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Clock, Users, Target, Package, Phone, MessageCircle, Plus, TrendingDown, CreditCard, Wallet, BarChart3, FileText, X, Calendar, PiggyBank } from 'lucide-react';
 import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import StatCard from '../components/StatCard';
@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [eodOpen, setEodOpen] = useState(false);
+  const [capitalRecords, setCapitalRecords] = useState([]);
 
   const today = new Date().toISOString().split('T')[0];
   const now = new Date();
@@ -86,7 +87,8 @@ export default function Dashboard() {
       api.get('/tasks'),
       api.get('/sales/analytics?period=30d'),
       api.get('/expenses'),
-    ]).then(([p, s, l, t, a, e]) => {
+      api.get('/capital'),
+    ]).then(([p, s, l, t, a, e, c]) => {
       setProducts(p.data.data);
       setSales(s.data.data);
       setLeads(l.data.data || []);
@@ -95,6 +97,7 @@ export default function Dashboard() {
       const exps = e.data.data || [];
       setExpenses(exps);
       setExpensesToday(exps.filter(ex => ex.date === today).reduce((s, ex) => s + Number(ex.amount || 0), 0));
+      setCapitalRecords(c.data.data || []);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -142,6 +145,8 @@ export default function Dashboard() {
   const eodExpectedCash = cashToday - expensesToday;
   const topProductToday = [...todaySales].sort((a, b) => b.total - a.total)[0];
   const todayProfit = todaySales.reduce((sum, s) => sum + Number(s.profit || 0), 0);
+  const totalCapitalInjected = capitalRecords.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const capitalUtilized = totalCapitalInjected > 0 ? Math.min(100, (totalExpenses / totalCapitalInjected) * 100) : 0;
 
   const chartOpts = {
     responsive: true, maintainAspectRatio: false,
@@ -202,6 +207,13 @@ export default function Dashboard() {
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Low Stock</p>
           <p className="text-xl font-bold mt-1">{lowStockItems.length}</p>
           <p className="text-xs opacity-70 mt-0.5">need reorder</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-rose-600 to-rose-800 rounded-2xl p-4 text-white relative overflow-hidden">
+          <PiggyBank size={16} className="opacity-80 mb-1.5" />
+          <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Capital Injected</p>
+          <p className="text-xl font-bold mt-1">{formatCurrency(totalCapitalInjected)}</p>
+          <p className="text-xs opacity-70 mt-0.5">{capitalUtilized.toFixed(0)}% utilized</p>
         </div>
       </div>
 
