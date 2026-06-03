@@ -16,14 +16,19 @@ export default function Settings() {
 
   useEffect(() => { loadInfo(); }, []);
 
-  const handleExport = () => {
-    const a = document.createElement('a');
-    a.href = `${api.defaults.baseURL}/settings/export`;
-    a.download = 'supermarket-backup.xlsx';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast.success('Downloading Excel backup...');
+  const handleExport = async () => {
+    try {
+      const response = await api.get('/settings/export', { responseType: 'blob' });
+      const url = URL.createObjectURL(response.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'supermarket-backup.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Downloading Excel backup...');
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
   const handleClearSales = async () => {

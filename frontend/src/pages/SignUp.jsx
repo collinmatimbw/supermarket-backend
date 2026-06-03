@@ -40,7 +40,7 @@ export default function SignUp({ onLoginClick }) {
     setLoading(true);
 
     try {
-      await api.post('/users/signup', { email: form.email, password: form.password });
+      await api.post('/auth/signup', { email: form.email, password: form.password });
       setSuccess('Account created! Please log in.');
       setTimeout(() => onLoginClick(), 2000);
     } catch (err) {

@@ -42,7 +42,7 @@ export default function Tasks() {
 
   const toggleDone = async (task) => {
     try {
-      await api.put(`/tasks/${task.id}`, { done: task.done ? 'false' : 'true' });
+      await api.put(`/tasks/${task.id}`, { done: task.done === 'true' ? 'false' : 'true' });
       load();
     } catch (e) { toast.error(e.message); }
   };

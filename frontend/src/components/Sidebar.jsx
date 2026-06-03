@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, Users,
   BarChart3, Settings, ChevronLeft, ChevronRight,
-  Store, X, Target, ClipboardList, FileText, Globe, Sun, Moon, LogOut, Shield,
+  X, Target, ClipboardList, FileText, Globe, Sun, Moon, LogOut, Shield,
   TrendingDown, UserCheck
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';

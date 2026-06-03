@@ -96,7 +96,6 @@ export default {
   salesPredictions: 'Utabiri wa Mauzo',
   marketAnalysis: 'Uchambuzi wa Soko',
   modelConfidence: 'Uaminifu wa Muundo',
-  revenueTrend: 'Mwelekeo wa Mapato',
   profitTrend: 'Mwelekeo wa Faida',
   transactionTrend: 'Mwelekeo wa Shughuli',
   sevenDayForecast: 'Utabiri wa Mauzo wa Siku 7',

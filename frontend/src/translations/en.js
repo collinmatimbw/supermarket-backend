@@ -96,7 +96,6 @@ export default {
   salesPredictions: 'Sales Predictions',
   marketAnalysis: 'Market Analysis',
   modelConfidence: 'Model Confidence',
-  revenueTrend: 'Revenue Trend',
   profitTrend: 'Profit Trend',
   transactionTrend: 'Transaction Trend',
   sevenDayForecast: '7-Day Sales Forecast',

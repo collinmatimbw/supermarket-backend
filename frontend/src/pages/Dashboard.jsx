@@ -61,7 +61,7 @@ export default function Dashboard() {
   const todayTasks = pendingTasks.filter(t => t.dueDate === today);
   const overdueTasks = pendingTasks.filter(t => t.dueDate && t.dueDate < today);
 
-  const recentSales = [...sales].reverse().slice(0, 5);
+  const recentSales = sales.slice(0, 5);
 
   const chartOpts = {
     responsive: true, maintainAspectRatio: false,
@@ -132,7 +132,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-semibold text-white">Sales Trend</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Last {analytics?.period || 30} days</p>
+              <p className="text-xs text-slate-500 mt-0.5">Last {analytics?.period === '30d' ? 30 : analytics?.period === '7d' ? 7 : analytics?.period === '90d' ? 90 : analytics?.period === '1y' ? 365 : analytics?.period === 'all' ? 'all' : 30} days</p>
             </div>
             <button onClick={() => navigate('/sales')} className="btn-primary text-xs px-3 py-1.5">
               <Plus size={13} className="mr-1" />New Sale
