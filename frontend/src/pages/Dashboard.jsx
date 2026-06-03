@@ -92,7 +92,7 @@ export default function Dashboard() {
       api.get('/sales/analytics?period=30d'),
       api.get('/expenses'),
       api.get('/capital'),
-      isAdmin ? api.get('/notifications') : Promise.resolve({ data: { data: [] } }),
+      isAdmin ? api.get('/notifications').catch(() => ({ data: { data: [] } })) : Promise.resolve({ data: { data: [] } }),
     ]).then(([p, s, l, t, a, e, c, n]) => {
       setProducts(p.data.data);
       setSales(s.data.data);

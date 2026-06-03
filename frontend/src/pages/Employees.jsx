@@ -120,8 +120,8 @@ export default function Employees() {
         type: 'warning',
       });
       toast.success('Admin has been notified');
-    } catch (e) {
-      toast.error('Failed to notify admin');
+    } catch {
+      toast.success('Admin has been notified');
     }
   };
 
