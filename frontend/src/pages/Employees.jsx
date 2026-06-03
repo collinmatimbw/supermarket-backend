@@ -42,6 +42,12 @@ export default function Employees() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    return () => {
+      sessionStorage.removeItem('skyc_emp_unlocked');
+    };
+  }, []);
+
   const loadPerf = (period) => {
     setPerfPeriod(period);
     api.get(`/employees/performance?period=${period}`).then(r => setPerformance(r.data.data));
