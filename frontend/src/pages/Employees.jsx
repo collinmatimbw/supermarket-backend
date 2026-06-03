@@ -160,6 +160,7 @@ export default function Employees() {
             { label: 'Commission Earned', key: 'commission' },
             { label: 'Status', key: 'status' },
           ])} className="btn-ghost text-sm"><Download size={14} className="mr-1.5" />Export</button>
+          <button onClick={() => setSetPinOpen(true)} className="btn-ghost text-sm" title={storedPin ? 'Change PIN' : 'Set Employee PIN'}><Lock size={14} className="mr-1.5" />PIN</button>
           <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />Add Employee</button>
         </div>
       } />
