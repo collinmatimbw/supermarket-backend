@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, ShoppingCart, Trash2, Filter, Download, MessageCircle, Phone } from 'lucide-react';
+import { Plus, Search, ShoppingCart, Trash2, Filter, Download, MessageCircle, Phone, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
@@ -20,6 +20,9 @@ export default function Sales() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState('all');
+  const [paymentModal, setPaymentModal] = useState(false);
+  const [paymentSale, setPaymentSale] = useState(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
 
   const load = useCallback(() => {
     Promise.all([
@@ -93,11 +96,26 @@ export default function Sales() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this sale?')) return;
+    try { await api.delete(`/sales/${id}`); toast.success('Sale deleted'); load(); } catch (e) { toast.error(e.message); }
+  };
+
+  const openPayment = (sale) => {
+    setPaymentSale(sale);
+    setPaymentAmount(sale.balance);
+    setPaymentModal(true);
+  };
+
+  const handlePayment = async () => {
+    if (!paymentSale || paymentAmount <= 0) return toast.error('Enter payment amount');
     try {
-      await api.delete(`/sales/${id}`);
-      toast.success('Sale deleted');
+      await api.put(`/sales/${paymentSale.id}/payment`, { paidAmount: paymentAmount });
+      toast.success('Payment recorded');
+      setPaymentModal(false);
+      setPaymentSale(null);
       load();
-    } catch (e) { toast.error(e.message); }
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
   if (loading) return <LoadingState message="Loading sales..." />;
@@ -200,6 +218,12 @@ export default function Sales() {
                     </td>
                     <td className="py-3 px-4 text-center">
                       <div className="flex items-center justify-center gap-1">
+                        {sale.balance > 0 && (
+                          <button onClick={() => openPayment(sale)}
+                            className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-500/10 transition-colors" title="Record payment">
+                            <DollarSign size={13} />
+                          </button>
+                        )}
                         {sale.customerPhone && (
                           <button onClick={() => sendWhatsApp(sale.customerPhone, formatReceipt(sale))}
                             className="p-1.5 rounded-lg text-green-500 hover:bg-green-500/10 transition-colors" title="Send WhatsApp receipt">
@@ -301,6 +325,41 @@ export default function Sales() {
           <button onClick={handleSave} className="btn-primary w-full justify-center py-3 text-base" disabled={saving}>
             {saving ? 'Recording...' : 'Complete Sale'}
           </button>
+        </div>
+      </Modal>
+
+      <Modal open={paymentModal} onClose={() => setPaymentModal(false)} title="Record Payment">
+        <div className="space-y-4">
+          {paymentSale && (
+            <>
+              <div className="p-3 rounded-xl bg-white/5">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-slate-400">Product</span>
+                  <span className="text-white">{paymentSale.productName}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-slate-400">Customer</span>
+                  <span className="text-white">{paymentSale.customerName}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-slate-400">Total</span>
+                  <span className="text-emerald-400">{formatCurrency(paymentSale.total)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Balance Due</span>
+                  <span className="text-red-400 font-bold">{formatCurrency(paymentSale.balance)}</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-400 mb-1 block">Amount Paying (TZS)</label>
+                <input className="form-input" type="number" min={1} max={paymentSale.balance} value={paymentAmount}
+                  onChange={e => setPaymentAmount(Math.min(Number(e.target.value), paymentSale.balance))} />
+              </div>
+              <button onClick={handlePayment} className="btn-primary w-full justify-center">
+                {paymentAmount >= paymentSale.balance ? 'Mark as Paid' : `Record Partial Payment (${formatCurrency(paymentAmount)})`}
+              </button>
+            </>
+          )}
         </div>
       </Modal>
     </div>
