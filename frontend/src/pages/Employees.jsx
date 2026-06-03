@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, Edit2, Trash2, Users, Target, DollarSign, TrendingUp, Download } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Users, Target, DollarSign, TrendingUp, Download, Lock, KeyRound, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
@@ -21,6 +21,15 @@ export default function Employees() {
   const [saving, setSaving] = useState(false);
   const [perfPeriod, setPerfPeriod] = useState('month');
   const [showPerf, setShowPerf] = useState(false);
+  const [pinGate, setPinGate] = useState(true);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [setPinOpen, setSetPinOpen] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+
+  const storedPin = localStorage.getItem('skyc_emp_pin') || '';
+  const unlocked = sessionStorage.getItem('skyc_emp_unlocked') === 'true';
 
   const load = useCallback(() => {
     Promise.all([
@@ -70,6 +79,66 @@ export default function Employees() {
     if (!window.confirm(`Remove ${name}?`)) return;
     try { await api.delete(`/employees/${id}`); toast.success('Removed'); load(); } catch (e) { toast.error(e.message); }
   };
+
+  const handlePinUnlock = () => {
+    if (pinInput === storedPin) {
+      sessionStorage.setItem('skyc_emp_unlocked', 'true');
+      setPinGate(false);
+      setPinError('');
+      setPinInput('');
+    } else {
+      setPinError('Wrong PIN');
+    }
+  };
+
+  const handleSetPin = () => {
+    if (newPin.length < 4) return toast.error('PIN must be at least 4 digits');
+    if (newPin !== confirmPin) return toast.error('PINs do not match');
+    localStorage.setItem('skyc_emp_pin', newPin);
+    setSetPinOpen(false);
+    toast.success('Employee PIN set');
+  };
+
+  const handleRemovePin = () => {
+    localStorage.removeItem('skyc_emp_pin');
+    sessionStorage.removeItem('skyc_emp_unlocked');
+    toast.success('Employee PIN removed');
+    setSetPinOpen(false);
+  };
+
+  // PIN Gate
+  if (!unlocked && storedPin) {
+    return (
+      <div className="animate-fade-in min-h-[60vh] flex items-center justify-center">
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 max-w-sm w-full text-center">
+          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+            <Lock size={28} className="text-amber-400" />
+          </div>
+          <h2 className="text-lg font-bold text-white mb-1">Employee Section Locked</h2>
+          <p className="text-sm text-slate-500 mb-6">Enter PIN to view employee data</p>
+          <input className="form-input text-center text-lg tracking-widest mb-3" type="password" maxLength={6} placeholder="••••" value={pinInput} onChange={e => setPinInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handlePinUnlock()} autoFocus />
+          {pinError && <p className="text-xs text-red-400 mb-3">{pinError}</p>}
+          <button onClick={handlePinUnlock} className="btn-primary w-full justify-center mb-3">Unlock</button>
+          <button onClick={() => setSetPinOpen(true)} className="text-xs text-slate-500 hover:text-slate-300"><Settings size={11} className="mr-1 inline" />Manage PIN</button>
+          <Modal open={setPinOpen} onClose={() => setSetPinOpen(false)} title={storedPin ? 'Change Employee PIN' : 'Set Employee PIN'}>
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500">Set a PIN to restrict access to employee data. Only people with the PIN can view salaries, commissions, and targets.</p>
+              <div>
+                <label className="text-xs font-semibold text-slate-400 mb-1 block">New PIN</label>
+                <input className="form-input text-center text-lg tracking-widest" type="password" maxLength={6} placeholder="••••" value={newPin} onChange={e => setNewPin(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-400 mb-1 block">Confirm PIN</label>
+                <input className="form-input text-center text-lg tracking-widest" type="password" maxLength={6} placeholder="••••" value={confirmPin} onChange={e => setConfirmPin(e.target.value)} />
+              </div>
+              <button onClick={handleSetPin} className="btn-primary w-full justify-center">{storedPin ? 'Change PIN' : 'Set PIN'}</button>
+              {storedPin && <button onClick={handleRemovePin} className="btn-danger w-full justify-center">Remove PIN Lock</button>}
+            </div>
+          </Modal>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return <LoadingState message="Loading employees..." />;
 
