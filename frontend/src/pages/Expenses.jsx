@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, Trash2, Receipt, TrendingDown } from 'lucide-react';
+import { Plus, Search, Trash2, Download, TrendingDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { LoadingState, EmptyState } from '../components/LoadingState';
 import api from '../utils/api';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { formatCurrency, formatDate, exportToCSV } from '../utils/helpers';
 
 const EXPENSE_CATEGORIES = ['rent', 'salaries', 'transport', 'stock purchase', 'utilities', 'maintenance', 'marketing', 'other'];
 const emptyForm = { name: '', category: 'other', amount: 0, date: '', paymentMethod: 'cash', notes: '' };
@@ -55,7 +55,17 @@ export default function Expenses() {
   return (
     <div className="animate-fade-in space-y-6">
       <PageHeader title="Expenses" subtitle={`${expenses.length} records · ${formatCurrency(totalExpenses)} total`} action={
-        <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />Add Expense</button>
+        <div className="flex gap-2">
+          <button onClick={() => exportToCSV(expenses, 'expenses-export', [
+            { label: 'Date', key: 'date' },
+            { label: 'Name', key: 'name' },
+            { label: 'Category', key: 'category' },
+            { label: 'Amount', key: 'amount' },
+            { label: 'Payment', key: 'paymentMethod' },
+            { label: 'Notes', key: 'notes' },
+          ])} className="btn-ghost text-sm"><Download size={14} className="mr-1.5" />Export</button>
+          <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />Add Expense</button>
+        </div>
       } />
 
       {/* Category Summary */}

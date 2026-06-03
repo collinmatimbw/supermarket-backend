@@ -8,6 +8,7 @@ import {
 import PageHeader from '../components/PageHeader';
 import { LoadingState } from '../components/LoadingState';
 import api from '../utils/api';
+import { exportToCSV } from '../utils/helpers';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement, Filler);
 
@@ -62,7 +63,17 @@ export default function Reports() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <PageHeader title="Reports" subtitle="Profit & Loss, sales, and customer reports" />
+      <PageHeader title="Reports" subtitle="Profit & Loss, sales, and customer reports" action={
+        <button onClick={() => exportToCSV(sales, 'sales-report', [
+          { label: 'Date', key: 'date' },
+          { label: 'Product', key: 'productName' },
+          { label: 'Quantity', key: 'quantity' },
+          { label: 'Total', key: 'total' },
+          { label: 'Profit', key: 'profit' },
+          { label: 'Payment', key: 'paymentMethod' },
+          { label: 'Customer', key: 'customerName' },
+        ])} className="btn-ghost text-sm"><Download size={14} className="mr-1.5" />Export CSV</button>
+      } />
 
       {/* Period Selector */}
       <div className="flex gap-2 overflow-x-auto pb-2">

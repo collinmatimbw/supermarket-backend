@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, Edit2, Trash2, Package, AlertTriangle, Calendar, Tag, Warehouse } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Package, AlertTriangle, Calendar, Tag, Warehouse, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { LoadingState, EmptyState } from '../components/LoadingState';
 import api from '../utils/api';
-import { formatCurrency, isLowStock } from '../utils/helpers';
+import { formatCurrency, isLowStock, exportToCSV } from '../utils/helpers';
 
 const emptyForm = { name: '', category: '', quantity: 0, price: 0, costPrice: 0, unit: '', expiryDate: '', batch: '', warehouse: '' };
 
@@ -66,7 +66,20 @@ export default function Products() {
   return (
     <div className="animate-fade-in space-y-6">
       <PageHeader title="Products" subtitle={`${products.length} products · ${lowStockItems.length} low stock`} action={
-        <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />Add Product</button>
+        <div className="flex gap-2">
+          <button onClick={() => exportToCSV(products, 'products-export', [
+            { label: 'Name', key: 'name' },
+            { label: 'Category', key: 'category' },
+            { label: 'Sell Price', key: 'price' },
+            { label: 'Cost Price', key: 'costPrice' },
+            { label: 'Stock', key: 'quantity' },
+            { label: 'Unit', key: 'unit' },
+            { label: 'Expiry', key: 'expiryDate' },
+            { label: 'Batch', key: 'batch' },
+            { label: 'Warehouse', key: 'warehouse' },
+          ])} className="btn-ghost text-sm"><Download size={14} className="mr-1.5" />Export</button>
+          <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />Add Product</button>
+        </div>
       } />
 
       {/* Low Stock Alert */}

@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, Edit2, Trash2, Users, Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Users, Phone, Mail, MapPin, MessageCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { LoadingState, EmptyState } from '../components/LoadingState';
 import api from '../utils/api';
-import { formatCurrency } from '../utils/helpers';
+import { formatCurrency, exportToCSV } from '../utils/helpers';
 
 const emptyForm = { name: '', phone: '', email: '', address: '' };
 
@@ -91,7 +91,23 @@ export default function Customers() {
   return (
     <div className="animate-fade-in space-y-6">
       <PageHeader title="Customers" subtitle={`${customers.length} registered customers`} action={
-        <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />Add Customer</button>
+        <div className="flex gap-2">
+          <button onClick={() => exportToCSV(customers.map(c => ({
+            ...c,
+            totalSpent: getTotalSpent(c.id),
+            lastPurchase: getLastPurchase(c.id)?.date || '',
+            status: getStatus(c.id).label
+          })), 'customers-export', [
+            { label: 'Name', key: 'name' },
+            { label: 'Phone', key: 'phone' },
+            { label: 'Email', key: 'email' },
+            { label: 'Address', key: 'address' },
+            { label: 'Total Spent', key: 'totalSpent' },
+            { label: 'Last Purchase', key: 'lastPurchase' },
+            { label: 'Status', key: 'status' },
+          ])} className="btn-ghost text-sm"><Download size={14} className="mr-1.5" />Export</button>
+          <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />Add Customer</button>
+        </div>
       } />
 
       {/* Search */}

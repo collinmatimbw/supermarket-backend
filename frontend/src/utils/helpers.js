@@ -24,3 +24,24 @@ export const CATEGORIES = [
   'All', 'Grains', 'Oils', 'Dairy', 'Sweeteners', 'Beverages',
   'Spices', 'Condiments', 'Snacks', 'Cleaning', 'Personal Care', 'Other'
 ];
+
+export const exportToCSV = (data, filename, columns) => {
+  if (!data || data.length === 0) return;
+  const headers = columns.map(c => c.label).join(',');
+  const rows = data.map(row =>
+    columns.map(c => {
+      let val = c.accessor ? c.accessor(row) : row[c.key];
+      if (val == null) val = '';
+      val = String(val).replace(/"/g, '""');
+      return `"${val}"`;
+    }).join(',')
+  );
+  const csv = [headers, ...rows].join('\n');
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${filename}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};

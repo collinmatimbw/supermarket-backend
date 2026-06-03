@@ -5,7 +5,7 @@ import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { LoadingState, EmptyState } from '../components/LoadingState';
 import api from '../utils/api';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { formatCurrency, formatDate, exportToCSV } from '../utils/helpers';
 
 const emptyForm = { productId: '', productName: '', quantity: 1, price: 0, total: 0, profit: 0, customerName: 'Walk-in', paymentMethod: 'cash', paidAmount: 0 };
 
@@ -98,9 +98,24 @@ export default function Sales() {
           <h1 className="text-xl font-bold text-white">Sales</h1>
           <p className="text-sm text-slate-500 mt-0.5">{sales.length} transactions</p>
         </div>
-        <button onClick={openNewSale} className="btn-primary text-sm px-5 py-2.5 text-base">
-          <Plus size={18} className="mr-1.5" />New Sale
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => exportToCSV(sales, 'sales-export', [
+            { label: 'Date', key: 'date' },
+            { label: 'Product', key: 'productName' },
+            { label: 'Quantity', key: 'quantity' },
+            { label: 'Total', key: 'total' },
+            { label: 'Profit', key: 'profit' },
+            { label: 'Payment', key: 'paymentMethod' },
+            { label: 'Status', key: 'paymentStatus' },
+            { label: 'Balance', key: 'balance' },
+            { label: 'Customer', key: 'customerName' },
+          ])} className="btn-ghost text-sm px-3 py-2.5">
+            <Download size={16} className="mr-1.5" />Export
+          </button>
+          <button onClick={openNewSale} className="btn-primary text-sm px-5 py-2.5 text-base">
+            <Plus size={18} className="mr-1.5" />New Sale
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
