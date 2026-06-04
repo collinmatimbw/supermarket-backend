@@ -27,6 +27,8 @@ export default function Dashboard() {
   const [capitalRecords, setCapitalRecords] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [localNotifs, setLocalNotifs] = useState([]);
+  const [activePeriod, setActivePeriod] = useState('all'); // today | week | month | all
+  const [selectedCard, setSelectedCard] = useState(null);
   const auth = JSON.parse(localStorage.getItem('skyc_auth') || '{}');
   const currentUser = auth.email;
   const isAdmin = currentUser === 'skyclamiere@gmail.com';
@@ -132,19 +134,29 @@ export default function Dashboard() {
   const pendingTasks = tasks.filter(t => t.done !== 'true');
   const todayTasks = pendingTasks.filter(t => t.dueDate === today);
   const overdueTasks = pendingTasks.filter(t => t.dueDate && t.dueDate < today);
+  // Period-filtered leads & tasks for cube interactivity
+  const filteredPendingLeads = activePeriod === 'today' ? pendingLeads.filter(l => l.createdAt?.startsWith(today)) :
+    activePeriod === 'month' ? pendingLeads.filter(l => l.createdAt?.startsWith(today.slice(0, 7))) :
+    activePeriod === 'week' ? (() => { const d = new Date(); d.setDate(d.getDate() - 7); return pendingLeads.filter(l => l.createdAt && new Date(l.createdAt) >= d); })() :
+    pendingLeads;
+  const filteredPendingTasks = activePeriod === 'today' ? pendingTasks.filter(t => t.dueDate === today) :
+    activePeriod === 'month' ? pendingTasks.filter(t => t.dueDate?.startsWith(today.slice(0, 7))) :
+    activePeriod === 'week' ? (() => { const d = new Date(); d.setDate(d.getDate() - 7); return pendingTasks.filter(t => t.dueDate && new Date(t.dueDate) >= d); })() :
+    pendingTasks;
 
-  const recentSales = sales.slice(0, 5);
+  const recentSales = filteredSales.slice(0, 5);
 
   // Dead stock - products not sold in 60 days
   const sixtyDaysAgo = new Date(); sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  const salesForDeadStock = isFiltered ? filteredSales : sales;
   const deadStockItems = products.filter(p => {
-    const sold = sales.some(s => (s.productId === p.id || s.productName === p.name) && new Date(s.date) >= sixtyDaysAgo);
+    const sold = salesForDeadStock.some(s => (s.productId === p.id || s.productName === p.name) && new Date(s.date) >= sixtyDaysAgo);
     return !sold;
   });
 
   // Best selling hours - group today's sales by hour from createdAt
   const hourBuckets = Array(24).fill(0);
-  sales.forEach(s => {
+  filteredSales.forEach(s => {
     if (s.createdAt) {
       const h = new Date(s.createdAt).getHours();
       if (h >= 0 && h < 24) hourBuckets[h] += Number(s.total || 0);
@@ -161,16 +173,56 @@ export default function Dashboard() {
   const totalCapitalInjected = capitalRecords.reduce((s, r) => s + Number(r.amount || 0), 0);
   const capitalUtilized = totalCapitalInjected > 0 ? Math.min(100, (totalExpenses / totalCapitalInjected) * 100) : 0;
 
+  // Data cube filter logic
+  const filterSalesByPeriod = (arr) => {
+    if (activePeriod === 'today') return arr.filter(s => s.date === today);
+    if (activePeriod === 'week') { const d = new Date(); d.setDate(d.getDate() - 7); return arr.filter(s => s.date && new Date(s.date) >= d); }
+    if (activePeriod === 'month') return arr.filter(s => s.date?.startsWith(today.slice(0, 7)));
+    return arr;
+  };
+  const filterSalesByCard = (arr) => {
+    if (selectedCard === 'debt') return arr.filter(s => s.paymentStatus === 'credit' || s.paymentStatus === 'partial');
+    if (selectedCard === 'profit') return arr.filter(s => Number(s.profit || 0) > 0);
+    return arr;
+  };
+  const filteredSales = filterSalesByCard(filterSalesByPeriod(sales));
+  const filteredTodaySales = filteredSales.filter(s => s.date === today);
+  const filteredMonthlySales = filteredSales.filter(s => s.date?.startsWith(today.slice(0, 7)));
+  const filteredRevenue = filteredSales.reduce((sum, s) => sum + Number(s.total || 0), 0);
+  const filteredTodayRevenue = filteredTodaySales.reduce((sum, s) => sum + Number(s.total || 0), 0);
+  const filteredProfit = filteredSales.reduce((sum, s) => sum + Number(s.profit || 0), 0);
+  const filteredProfitMargin = filteredRevenue > 0 ? ((filteredProfit / filteredRevenue) * 100).toFixed(1) : 0;
+  const filteredOutstandingDebt = filteredSales.reduce((s, sale) => s + Number(sale.balance || 0), 0);
+  const filteredCreditSales = filteredSales.filter(s => s.paymentStatus === 'credit' || s.paymentStatus === 'partial');
+  const filteredCashInHand = filteredRevenue - totalExpenses;
+  const isFiltered = activePeriod !== 'all' || selectedCard !== null;
+
+  const cubePeriods = [
+    { key: 'all', label: 'All Time' },
+    { key: 'today', label: 'Today' },
+    { key: 'week', label: 'This Week' },
+    { key: 'month', label: 'This Month' },
+  ];
+
   const chartOpts = {
     responsive: true, maintainAspectRatio: false,
     plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1, titleColor: '#94a3b8', bodyColor: '#f1f5f9', padding: 12, callbacks: { label: ctx => ` TZS ${ctx.raw.toLocaleString()}` } } },
     scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475569', font: { family: 'Sora', size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475569', font: { family: 'Sora', size: 11 }, callback: v => 'TZS ' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v) } } }
   };
 
-  const lineData = analytics?.dailyRevenue ? {
+  // Aggregate filtered sales by date for chart
+  const dailyAgg = {};
+  filteredSales.forEach(s => {
+    if (s.date) { dailyAgg[s.date] = (dailyAgg[s.date] || 0) + Number(s.total || 0); }
+  });
+  const sortedDates = Object.keys(dailyAgg).sort();
+  const lineData = isFiltered || Object.keys(dailyAgg).length > 0 ? {
+    labels: sortedDates.map(d => d.length === 7 ? d.slice(5) : d.slice(5)),
+    datasets: [{ label: 'Revenue', data: sortedDates.map(d => dailyAgg[d]), borderColor: '#6ee7b7', backgroundColor: 'rgba(110,231,183,0.06)', pointBackgroundColor: '#6ee7b7', pointRadius: 3, tension: 0.45, fill: true }]
+  } : (analytics?.dailyRevenue ? {
     labels: analytics.dailyRevenue.map(d => d.date.length === 7 ? d.date.slice(5) : d.date.slice(5)),
     datasets: [{ label: 'Revenue', data: analytics.dailyRevenue.map(d => d.revenue), borderColor: '#6ee7b7', backgroundColor: 'rgba(110,231,183,0.06)', pointBackgroundColor: '#6ee7b7', pointRadius: 3, tension: 0.45, fill: true }]
-  } : null;
+  } : null);
 
   const cardLink = (path, label) => (
     <button onClick={() => navigate(path)} className="text-xs text-emerald-400 hover:underline">{label} →</button>
@@ -178,56 +230,97 @@ export default function Dashboard() {
 
   return (
     <div className="animate-fade-in space-y-6">
+      {/* Data Cube — Period Slicer & Active Filters */}
+      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider mr-1">Period</span>
+          {cubePeriods.map(p => (
+            <button key={p.key} onClick={() => { setActivePeriod(p.key); if (p.key === 'all' && !selectedCard) setSelectedCard(null); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activePeriod === p.key ? 'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+            >{p.label}</button>
+          ))}
+          <span className="w-px h-6 bg-slate-700/50 mx-1 hidden sm:block" />
+          <button onClick={() => { setSelectedCard(null); setActivePeriod('all'); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isFiltered ? 'bg-violet-500/20 text-violet-300 ring-1 ring-violet-500/40' : 'text-slate-600 cursor-default'}`}
+          >Clear Filters</button>
+        </div>
+        {isFiltered && (
+          <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-2 border-t border-slate-700/30">
+            <span className="text-[10px] text-slate-600 font-medium uppercase tracking-wider mr-0.5">Filters:</span>
+            {activePeriod !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-700/50 text-xs text-slate-300">
+                Period: {cubePeriods.find(p => p.key === activePeriod)?.label}
+                <button onClick={() => setActivePeriod('all')} className="text-slate-500 hover:text-slate-300">&times;</button>
+              </span>
+            )}
+            {selectedCard && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-700/50 text-xs text-slate-300">
+                Focus: {selectedCard.charAt(0).toUpperCase() + selectedCard.slice(1)}
+                <button onClick={() => setSelectedCard(null)} className="text-slate-500 hover:text-slate-300">&times;</button>
+              </span>
+            )}
+            <span className="text-[10px] text-slate-600 ml-auto">{filteredSales.length} sales shown</span>
+          </div>
+        )}
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-        <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-2xl p-4 text-white relative overflow-hidden">
+        <button onClick={() => setSelectedCard(selectedCard === 'sales' ? null : 'sales')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'sales' ? 'ring-2 ring-emerald-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-emerald-600 to-emerald-800`}>
           <ShoppingCart size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Today's Sales</p>
-          <p className="text-xl font-bold mt-1">{formatCurrency(todayRevenue)}</p>
-          <p className="text-xs opacity-70 mt-0.5">{todaySales.length} transactions</p>
-        </div>
+          <p className="text-xl font-bold mt-1">{isFiltered ? formatCurrency(filteredTodayRevenue) : formatCurrency(todayRevenue)}</p>
+          <p className="text-xs opacity-70 mt-0.5">{(isFiltered ? filteredTodaySales : todaySales).length} transactions</p>
+          {selectedCard === 'sales' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
+        </button>
 
-        <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-4 text-white relative overflow-hidden">
+        <button onClick={() => setSelectedCard(selectedCard === 'revenue' ? null : 'revenue')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'revenue' ? 'ring-2 ring-blue-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-blue-600 to-blue-800`}>
           <DollarSign size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Monthly Revenue</p>
-          <p className="text-xl font-bold mt-1">{formatCurrency(monthlyRevenue)}</p>
-          <p className="text-xs opacity-70 mt-0.5">{monthlySales.length} sales</p>
-        </div>
+          <p className="text-xl font-bold mt-1">{isFiltered ? formatCurrency(filteredRevenue) : formatCurrency(monthlyRevenue)}</p>
+          <p className="text-xs opacity-70 mt-0.5">{(isFiltered ? filteredSales.length : monthlySales.length)} sales</p>
+          {selectedCard === 'revenue' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
+        </button>
 
-        <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-2xl p-4 text-white relative overflow-hidden">
+        <button onClick={() => setSelectedCard(selectedCard === 'profit' ? null : 'profit')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'profit' ? 'ring-2 ring-purple-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-purple-600 to-purple-800`}>
           <TrendingUp size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Net Profit</p>
-          <p className="text-xl font-bold mt-1">{formatCurrency(totalProfit)}</p>
-          <p className="text-xs opacity-70 mt-0.5">Margin: {profitMargin}%</p>
-        </div>
+          <p className="text-xl font-bold mt-1">{isFiltered ? formatCurrency(filteredProfit) : formatCurrency(totalProfit)}</p>
+          <p className="text-xs opacity-70 mt-0.5">Margin: {isFiltered ? filteredProfitMargin : profitMargin}%</p>
+          {selectedCard === 'profit' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
+        </button>
 
-        <div className="bg-gradient-to-br from-red-600 to-red-800 rounded-2xl p-4 text-white relative overflow-hidden">
+        <button onClick={() => setSelectedCard(selectedCard === 'debt' ? null : 'debt')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'debt' ? 'ring-2 ring-red-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-red-600 to-red-800`}>
           <CreditCard size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Outstanding Debt</p>
-          <p className="text-xl font-bold mt-1">{formatCurrency(outstandingDebts)}</p>
-          <p className="text-xs opacity-70 mt-0.5">{creditSales.length} debtors</p>
-        </div>
+          <p className="text-xl font-bold mt-1">{isFiltered ? formatCurrency(filteredOutstandingDebt) : formatCurrency(outstandingDebts)}</p>
+          <p className="text-xs opacity-70 mt-0.5">{isFiltered ? filteredCreditSales.length : creditSales.length} debtors</p>
+          {selectedCard === 'debt' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
+        </button>
 
-        <div className="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-4 text-white relative overflow-hidden">
+        <button onClick={() => setSelectedCard(selectedCard === 'cash' ? null : 'cash')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'cash' ? 'ring-2 ring-teal-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-teal-600 to-teal-800`}>
           <Wallet size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Cash in Hand</p>
-          <p className="text-xl font-bold mt-1">{formatCurrency(cashInHand)}</p>
+          <p className="text-xl font-bold mt-1">{isFiltered ? formatCurrency(filteredCashInHand) : formatCurrency(cashInHand)}</p>
           <p className="text-xs opacity-70 mt-0.5">Revenue − Expenses</p>
-        </div>
+          {selectedCard === 'cash' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
+        </button>
 
-        <div className="bg-gradient-to-br from-amber-600 to-amber-800 rounded-2xl p-4 text-white relative overflow-hidden">
+        <button onClick={() => setSelectedCard(selectedCard === 'stock' ? null : 'stock')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'stock' ? 'ring-2 ring-amber-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-amber-600 to-amber-800`}>
           <AlertTriangle size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Low Stock</p>
           <p className="text-xl font-bold mt-1">{lowStockItems.length}</p>
           <p className="text-xs opacity-70 mt-0.5">need reorder</p>
-        </div>
+          {selectedCard === 'stock' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
+        </button>
 
-        <div className="bg-gradient-to-br from-rose-600 to-rose-800 rounded-2xl p-4 text-white relative overflow-hidden">
+        <button onClick={() => setSelectedCard(selectedCard === 'capital' ? null : 'capital')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'capital' ? 'ring-2 ring-rose-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-rose-600 to-rose-800`}>
           <PiggyBank size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Capital Injected</p>
           <p className="text-xl font-bold mt-1">{formatCurrency(totalCapitalInjected)}</p>
           <p className="text-xs opacity-70 mt-0.5">{capitalUtilized.toFixed(0)}% utilized</p>
-        </div>
+          {selectedCard === 'capital' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
+        </button>
       </div>
 
       {/* Charts + Quick Actions */}
@@ -236,8 +329,8 @@ export default function Dashboard() {
         <div className="lg:col-span-2 bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold text-white">Sales Trend</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Last {analytics?.period === '30d' ? 30 : analytics?.period === '7d' ? 7 : analytics?.period === '90d' ? 90 : analytics?.period === '1y' ? 365 : analytics?.period === 'all' ? 'all' : 30} days</p>
+              <h3 className="font-semibold text-white">Sales Trend {isFiltered && <span className="text-emerald-400 font-normal text-xs ml-1">(filtered)</span>}</h3>
+              <p className="text-xs text-slate-500 mt-0.5">{isFiltered ? `${filteredSales.length} sales · ${formatCurrency(filteredRevenue)}` : `Last ${analytics?.period === '30d' ? 30 : analytics?.period === '7d' ? 7 : analytics?.period === '90d' ? 90 : analytics?.period === '1y' ? 365 : analytics?.period === 'all' ? 'all' : 30} days`}</p>
             </div>
             <button onClick={() => navigate('/sales')} className="btn-primary text-xs px-3 py-1.5">
               <Plus size={13} className="mr-1" />New Sale
@@ -313,14 +406,14 @@ export default function Dashboard() {
         {/* New Leads */}
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-white">Leads ({pendingLeads.length})</h3>
+            <h3 className="text-sm font-semibold text-white">Leads ({filteredPendingLeads.length}){isFiltered && filteredPendingLeads.length !== pendingLeads.length ? <span className="text-[10px] text-slate-500 font-normal ml-1">filtered</span> : ''}</h3>
             {cardLink('/leads', 'All leads')}
           </div>
-          {pendingLeads.length === 0 ? (
+          {filteredPendingLeads.length === 0 ? (
             <p className="text-slate-500 text-sm text-center py-6">No leads yet</p>
           ) : (
             <div className="space-y-2">
-              {pendingLeads.slice(0, 5).map(lead => (
+              {filteredPendingLeads.slice(0, 5).map(lead => (
                 <div key={lead.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5">
                   <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-xs font-bold">
                     {lead.name.charAt(0).toUpperCase()}
@@ -343,14 +436,14 @@ export default function Dashboard() {
         {/* Upcoming Tasks */}
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-white">Upcoming Tasks</h3>
+            <h3 className="text-sm font-semibold text-white">Upcoming Tasks ({filteredPendingTasks.length}){isFiltered && filteredPendingTasks.length !== pendingTasks.length ? <span className="text-[10px] text-slate-500 font-normal ml-1">filtered</span> : ''}</h3>
             {cardLink('/tasks', 'All tasks')}
           </div>
-          {pendingTasks.length === 0 ? (
+          {filteredPendingTasks.length === 0 ? (
             <p className="text-slate-500 text-sm text-center py-6">No pending tasks</p>
           ) : (
             <div className="space-y-2">
-              {pendingTasks.slice(0, 5).map(task => (
+              {filteredPendingTasks.slice(0, 5).map(task => (
                 <div key={task.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5">
                   <div className={`w-2 h-2 rounded-full ${task.dueDate && task.dueDate < today ? 'bg-red-400' : 'bg-blue-400'}`} />
                   <div className="flex-1 min-w-0">
@@ -373,7 +466,7 @@ export default function Dashboard() {
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle size={16} className="text-amber-400" />
-            <h3 className="text-sm font-semibold text-amber-400">Dead Stock — No Sale in 60 Days</h3>
+            <h3 className="text-sm font-semibold text-amber-400">Dead Stock — No Sale in 60 Days{isFiltered ? <span className="text-[10px] text-slate-500 font-normal ml-2">(filtered)</span> : ''}</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             {deadStockItems.slice(0, 4).map(p => (
