@@ -265,12 +265,12 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+      {/* Summary Cards — Primary KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <button onClick={() => setSelectedCard(selectedCard === 'sales' ? null : 'sales')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'sales' ? 'ring-2 ring-emerald-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-emerald-600 to-emerald-800`}>
           <ShoppingCart size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Today's Sales</p>
-          <p className="text-xl font-bold mt-1">{isFiltered ? formatCurrency(filteredTodayRevenue) : formatCurrency(todayRevenue)}</p>
+          <p className="text-2xl font-bold mt-1">{isFiltered ? formatCurrency(filteredTodayRevenue) : formatCurrency(todayRevenue)}</p>
           <p className="text-xs opacity-70 mt-0.5">{(isFiltered ? filteredTodaySales : todaySales).length} transactions</p>
           {selectedCard === 'sales' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
         </button>
@@ -278,7 +278,7 @@ export default function Dashboard() {
         <button onClick={() => setSelectedCard(selectedCard === 'revenue' ? null : 'revenue')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'revenue' ? 'ring-2 ring-blue-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-blue-600 to-blue-800`}>
           <DollarSign size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Monthly Revenue</p>
-          <p className="text-xl font-bold mt-1">{isFiltered ? formatCurrency(filteredRevenue) : formatCurrency(monthlyRevenue)}</p>
+          <p className="text-2xl font-bold mt-1">{isFiltered ? formatCurrency(filteredRevenue) : formatCurrency(monthlyRevenue)}</p>
           <p className="text-xs opacity-70 mt-0.5">{(isFiltered ? filteredSales.length : monthlySales.length)} sales</p>
           {selectedCard === 'revenue' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
         </button>
@@ -286,11 +286,14 @@ export default function Dashboard() {
         <button onClick={() => setSelectedCard(selectedCard === 'profit' ? null : 'profit')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'profit' ? 'ring-2 ring-purple-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-purple-600 to-purple-800`}>
           <TrendingUp size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Net Profit</p>
-          <p className="text-xl font-bold mt-1">{isFiltered ? formatCurrency(filteredProfit) : formatCurrency(totalProfit)}</p>
+          <p className="text-2xl font-bold mt-1">{isFiltered ? formatCurrency(filteredProfit) : formatCurrency(totalProfit)}</p>
           <p className="text-xs opacity-70 mt-0.5">Margin: {isFiltered ? filteredProfitMargin : profitMargin}%</p>
           {selectedCard === 'profit' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
         </button>
+      </div>
 
+      {/* Summary Cards — Secondary KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <button onClick={() => setSelectedCard(selectedCard === 'debt' ? null : 'debt')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'debt' ? 'ring-2 ring-red-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-red-600 to-red-800`}>
           <CreditCard size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Outstanding Debt</p>
