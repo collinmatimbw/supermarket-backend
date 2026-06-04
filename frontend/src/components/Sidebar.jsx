@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users,
   BarChart3, Settings, ChevronLeft, ChevronRight,
   X, Target, ClipboardList, FileText, Globe, Sun, Moon, LogOut, Shield,
-  TrendingDown, UserCheck, Wallet
+  TrendingDown, UserCheck, Wallet, MessageSquare
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -30,6 +30,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
     { path: '/capital', label: 'Capital', icon: Wallet },
     { path: '/products', label: 'Products', icon: Package },
     { path: '/tasks', label: 'Tasks', icon: ClipboardList },
+    { path: '/chat', label: 'SKYC AI', icon: MessageSquare },
     { path: '/reports', label: 'Reports', icon: FileText },
     { path: '/settings', label: 'Settings', icon: Settings },
   ];

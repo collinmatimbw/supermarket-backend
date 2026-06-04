@@ -17,6 +17,7 @@ const expensesRouter = require('./routes/expenses');
 const employeesRouter = require('./routes/employees');
 const capitalRouter = require('./routes/capital');
 const notificationRouter = require('./routes/notifications');
+const chatRouter = require('./routes/chat');
 const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
@@ -42,6 +43,7 @@ app.use('/api/expenses', authMiddleware, expensesRouter);
 app.use('/api/employees', authMiddleware, employeesRouter);
 app.use('/api/capital', authMiddleware, capitalRouter);
 app.use('/api/notifications', authMiddleware, notificationRouter);
+app.use('/api/chat', authMiddleware, chatRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

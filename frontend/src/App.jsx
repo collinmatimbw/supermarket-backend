@@ -20,6 +20,7 @@ import Reports from './pages/Reports';
 import Expenses from './pages/Expenses';
 import Employees from './pages/Employees';
 import Capital from './pages/Capital';
+import Chat from './pages/Chat';
 import Settings from './pages/Settings';
 import ManageUsers from './pages/ManageUsers';
 
@@ -111,6 +112,7 @@ export default function App() {
             <Route path="/expenses" element={<ProtectedRoute><Layout><Expenses /></Layout></ProtectedRoute>} />
             <Route path="/employees" element={<ProtectedRoute><Layout><Employees /></Layout></ProtectedRoute>} />
             <Route path="/capital" element={<ProtectedRoute><Layout><Capital /></Layout></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute><Layout><Chat /></Layout></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
             <Route path="/manage-users" element={<ProtectedRoute><Layout><ManageUsers /></Layout></ProtectedRoute>} />
           </Routes>
