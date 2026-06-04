@@ -227,6 +227,8 @@ export default {
   needReorder: 'need reorder',
   percentUtilized: '% utilized',
   salesTrend: 'Sales Trend',
+  revenueChart: 'Revenue',
+  profitChart: 'Profit',
   last: 'Last',
   daysLabel: 'days',
   quickActions: 'Quick Actions',

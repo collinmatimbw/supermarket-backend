@@ -207,22 +207,31 @@ export default function Dashboard() {
 
   const chartOpts = {
     responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1, titleColor: '#94a3b8', bodyColor: '#f1f5f9', padding: 12, callbacks: { label: ctx => ` TZS ${ctx.raw.toLocaleString()}` } } },
+    plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Sora', size: 10 }, usePointStyle: true, pointStyle: 'circle', padding: 16 } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1, titleColor: '#94a3b8', bodyColor: '#f1f5f9', padding: 12, callbacks: { label: ctx => ` ${ctx.dataset.label}: TZS ${ctx.raw.toLocaleString()}` } } },
     scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475569', font: { family: 'Sora', size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475569', font: { family: 'Sora', size: 11 }, callback: v => 'TZS ' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v) } } }
   };
 
-  // Aggregate filtered sales by date for chart
+  // Aggregate filtered sales by date for chart — revenue + profit lines
   const dailyAgg = {};
   filteredSales.forEach(s => {
-    if (s.date) { dailyAgg[s.date] = (dailyAgg[s.date] || 0) + Number(s.total || 0); }
+    if (s.date) {
+      if (!dailyAgg[s.date]) dailyAgg[s.date] = { revenue: 0, profit: 0 };
+      dailyAgg[s.date].revenue += Number(s.total || 0);
+      dailyAgg[s.date].profit += Number(s.profit || 0);
+    }
   });
   const sortedDates = Object.keys(dailyAgg).sort();
   const lineData = isFiltered || Object.keys(dailyAgg).length > 0 ? {
     labels: sortedDates.map(d => d.length === 7 ? d.slice(5) : d.slice(5)),
-    datasets: [{ label: 'Revenue', data: sortedDates.map(d => dailyAgg[d]), borderColor: '#6ee7b7', backgroundColor: 'rgba(110,231,183,0.06)', pointBackgroundColor: '#6ee7b7', pointRadius: 3, tension: 0.45, fill: true }]
+    datasets: [
+      { label: t('revenueChart'), data: sortedDates.map(d => dailyAgg[d].revenue), borderColor: '#6ee7b7', backgroundColor: 'rgba(110,231,183,0.06)', pointBackgroundColor: '#6ee7b7', pointRadius: 2, tension: 0.45, fill: true },
+      { label: t('profitChart'), data: sortedDates.map(d => dailyAgg[d].profit), borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.06)', pointBackgroundColor: '#a78bfa', pointRadius: 2, tension: 0.45, borderDash: [5, 3], fill: false }
+    ]
   } : (analytics?.dailyRevenue ? {
     labels: analytics.dailyRevenue.map(d => d.date.length === 7 ? d.date.slice(5) : d.date.slice(5)),
-    datasets: [{ label: 'Revenue', data: analytics.dailyRevenue.map(d => d.revenue), borderColor: '#6ee7b7', backgroundColor: 'rgba(110,231,183,0.06)', pointBackgroundColor: '#6ee7b7', pointRadius: 3, tension: 0.45, fill: true }]
+    datasets: [
+      { label: t('revenueChart'), data: analytics.dailyRevenue.map(d => d.revenue), borderColor: '#6ee7b7', backgroundColor: 'rgba(110,231,183,0.06)', pointBackgroundColor: '#6ee7b7', pointRadius: 2, tension: 0.45, fill: true }
+    ]
   } : null);
 
   const cardLink = (path, label) => (

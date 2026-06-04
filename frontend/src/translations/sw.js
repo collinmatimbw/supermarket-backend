@@ -227,6 +227,8 @@ export default {
   needReorder: 'zinahitaji kuagizwa',
   percentUtilized: '%imetumika',
   salesTrend: 'Mwelekeo wa Mauzo',
+  revenueChart: 'Mapato',
+  profitChart: 'Faida',
   last: 'Mwisho',
   daysLabel: 'siku',
   quickActions: 'Vitendo vya Haraka',
