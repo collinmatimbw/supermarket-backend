@@ -134,6 +134,31 @@ export default function Dashboard() {
   const pendingTasks = tasks.filter(t => t.done !== 'true');
   const todayTasks = pendingTasks.filter(t => t.dueDate === today);
   const overdueTasks = pendingTasks.filter(t => t.dueDate && t.dueDate < today);
+
+  // Data cube filter logic — must be defined before anything that depends on it
+  const filterSalesByPeriod = (arr) => {
+    if (activePeriod === 'today') return arr.filter(s => s.date === today);
+    if (activePeriod === 'week') { const d = new Date(); d.setDate(d.getDate() - 7); return arr.filter(s => s.date && new Date(s.date) >= d); }
+    if (activePeriod === 'month') return arr.filter(s => s.date?.startsWith(today.slice(0, 7)));
+    return arr;
+  };
+  const filterSalesByCard = (arr) => {
+    if (selectedCard === 'debt') return arr.filter(s => s.paymentStatus === 'credit' || s.paymentStatus === 'partial');
+    if (selectedCard === 'profit') return arr.filter(s => Number(s.profit || 0) > 0);
+    return arr;
+  };
+  const filteredSales = filterSalesByCard(filterSalesByPeriod(sales));
+  const filteredTodaySales = filteredSales.filter(s => s.date === today);
+  const filteredMonthlySales = filteredSales.filter(s => s.date?.startsWith(today.slice(0, 7)));
+  const filteredRevenue = filteredSales.reduce((sum, s) => sum + Number(s.total || 0), 0);
+  const filteredTodayRevenue = filteredTodaySales.reduce((sum, s) => sum + Number(s.total || 0), 0);
+  const filteredProfit = filteredSales.reduce((sum, s) => sum + Number(s.profit || 0), 0);
+  const filteredProfitMargin = filteredRevenue > 0 ? ((filteredProfit / filteredRevenue) * 100).toFixed(1) : 0;
+  const filteredOutstandingDebt = filteredSales.reduce((s, sale) => s + Number(sale.balance || 0), 0);
+  const filteredCreditSales = filteredSales.filter(s => s.paymentStatus === 'credit' || s.paymentStatus === 'partial');
+  const filteredCashInHand = filteredRevenue - totalExpenses;
+  const isFiltered = activePeriod !== 'all' || selectedCard !== null;
+
   // Period-filtered leads & tasks for cube interactivity
   const filteredPendingLeads = activePeriod === 'today' ? pendingLeads.filter(l => l.createdAt?.startsWith(today)) :
     activePeriod === 'month' ? pendingLeads.filter(l => l.createdAt?.startsWith(today.slice(0, 7))) :
@@ -172,30 +197,6 @@ export default function Dashboard() {
   const todayProfit = todaySales.reduce((sum, s) => sum + Number(s.profit || 0), 0);
   const totalCapitalInjected = capitalRecords.reduce((s, r) => s + Number(r.amount || 0), 0);
   const capitalUtilized = totalCapitalInjected > 0 ? Math.min(100, (totalExpenses / totalCapitalInjected) * 100) : 0;
-
-  // Data cube filter logic
-  const filterSalesByPeriod = (arr) => {
-    if (activePeriod === 'today') return arr.filter(s => s.date === today);
-    if (activePeriod === 'week') { const d = new Date(); d.setDate(d.getDate() - 7); return arr.filter(s => s.date && new Date(s.date) >= d); }
-    if (activePeriod === 'month') return arr.filter(s => s.date?.startsWith(today.slice(0, 7)));
-    return arr;
-  };
-  const filterSalesByCard = (arr) => {
-    if (selectedCard === 'debt') return arr.filter(s => s.paymentStatus === 'credit' || s.paymentStatus === 'partial');
-    if (selectedCard === 'profit') return arr.filter(s => Number(s.profit || 0) > 0);
-    return arr;
-  };
-  const filteredSales = filterSalesByCard(filterSalesByPeriod(sales));
-  const filteredTodaySales = filteredSales.filter(s => s.date === today);
-  const filteredMonthlySales = filteredSales.filter(s => s.date?.startsWith(today.slice(0, 7)));
-  const filteredRevenue = filteredSales.reduce((sum, s) => sum + Number(s.total || 0), 0);
-  const filteredTodayRevenue = filteredTodaySales.reduce((sum, s) => sum + Number(s.total || 0), 0);
-  const filteredProfit = filteredSales.reduce((sum, s) => sum + Number(s.profit || 0), 0);
-  const filteredProfitMargin = filteredRevenue > 0 ? ((filteredProfit / filteredRevenue) * 100).toFixed(1) : 0;
-  const filteredOutstandingDebt = filteredSales.reduce((s, sale) => s + Number(sale.balance || 0), 0);
-  const filteredCreditSales = filteredSales.filter(s => s.paymentStatus === 'credit' || s.paymentStatus === 'partial');
-  const filteredCashInHand = filteredRevenue - totalExpenses;
-  const isFiltered = activePeriod !== 'all' || selectedCard !== null;
 
   const cubePeriods = [
     { key: 'all', label: 'All Time' },
