@@ -141,34 +141,34 @@ export default function Employees() {
     return (
       <div className="animate-fade-in min-h-[70vh] flex items-center justify-center">
         <div className="relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-emerald-500/20 to-amber-500/20 rounded-3xl blur-xl opacity-60" />
+          <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-emerald-500/10 to-emerald-500/20 rounded-3xl blur-xl opacity-60" />
           <div className="relative bg-slate-900/90 border border-slate-700/60 rounded-2xl p-8 max-w-sm w-full text-center backdrop-blur-sm">
-            <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-amber-500/20 to-yellow-500/10 border border-amber-500/20 flex items-center justify-center">
-              <Lock size={28} className="text-amber-400" />
+            <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <Lock size={28} className="text-emerald-400" />
             </div>
             <h2 className="text-lg font-bold text-white mb-1">{t('sectionLocked')}</h2>
             <p className="text-sm text-slate-500 mb-7">{t('enterPinToView')}</p>
-            <input className="form-input text-center text-lg tracking-[0.3em] mb-3 bg-slate-800/80 border-slate-600/50 focus:border-amber-500/40" type="password" maxLength={6} placeholder={t('pinPlaceholder')} value={pinInput} onChange={e => setPinInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handlePinUnlock()} autoFocus />
+            <input className="form-input text-center text-lg tracking-[0.3em] mb-3 bg-slate-800/80 border-slate-600/50 focus:border-emerald-500/40" type="password" maxLength={6} placeholder={t('pinPlaceholder')} value={pinInput} onChange={e => setPinInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handlePinUnlock()} autoFocus />
             {pinError && <p className="text-xs text-red-400 mb-3 flex items-center justify-center gap-1"><span className="w-1 h-1 rounded-full bg-red-400 inline-block" />{pinError}</p>}
-            <button onClick={handlePinUnlock} className="w-full py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 hover:from-amber-400 hover:to-yellow-400 transition-all mb-4">{t('unlock')}</button>
-            <button onClick={handleForgotPin} className="text-xs text-slate-600 hover:text-amber-400 transition-colors">
+            <button onClick={handlePinUnlock} className="w-full py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-400 hover:to-emerald-500 transition-all mb-4">{t('unlock')}</button>
+            <button onClick={handleForgotPin} className="text-xs text-slate-600 hover:text-emerald-400 transition-colors">
               <KeyRound size={12} className="mr-1.5 inline-block" />{t('forgotPin')}
             </button>
           </div>
         </div>
         <Modal open={setPinOpen} onClose={() => setSetPinOpen(false)} title={storedPin ? t('changePin') : t('setPin')}>
           <div className="space-y-5">
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
-              <Lock size={16} className="text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+              <Lock size={16} className="text-emerald-400 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-slate-400 leading-relaxed">{t('pinInfoText')}</p>
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-400 mb-1.5 block">{t('newPin')}</label>
-              <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-amber-500/40" type="password" maxLength={6} placeholder={t('pinPlaceholder')} value={newPin} onChange={e => setNewPin(e.target.value)} />
+              <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-emerald-500/40" type="password" maxLength={6} placeholder={t('pinPlaceholder')} value={newPin} onChange={e => setNewPin(e.target.value)} />
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-400 mb-1.5 block">{t('confirmPin')}</label>
-              <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-amber-500/40" type="password" maxLength={6} placeholder={t('pinPlaceholder')} value={confirmPin} onChange={e => setConfirmPin(e.target.value)} />
+              <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-emerald-500/40" type="password" maxLength={6} placeholder={t('pinPlaceholder')} value={confirmPin} onChange={e => setConfirmPin(e.target.value)} />
             </div>
             <button onClick={handleSetPin} className="btn-primary w-full justify-center">{storedPin ? t('changePin') : t('setPin')}</button>
             {storedPin && <button onClick={handleRemovePin} className="btn-danger w-full justify-center">{t('removePinLock')}</button>}
@@ -216,17 +216,17 @@ export default function Employees() {
           <p className="text-xl font-bold text-white">{employees.length}</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4">
-          <Target size={16} className="text-blue-400 mb-1.5" />
+          <Target size={16} className="text-emerald-400 mb-1.5" />
           <p className="text-xs text-slate-500">{t('active')}</p>
           <p className="text-xl font-bold text-white">{activeEmployees.length}</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4">
-          <DollarSign size={16} className="text-purple-400 mb-1.5" />
+          <DollarSign size={16} className="text-emerald-400 mb-1.5" />
           <p className="text-xs text-slate-500">{t('totalSalary')}</p>
           <p className="text-xl font-bold text-white">{formatCurrency(employees.reduce((s, e) => s + Number(e.baseSalary || 0), 0))}</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4">
-          <TrendingUp size={16} className="text-amber-400 mb-1.5" />
+          <TrendingUp size={16} className="text-emerald-400 mb-1.5" />
           <p className="text-xs text-slate-500">{t('commissionOwedLabel')}</p>
           <p className="text-xl font-bold text-white">{formatCurrency(totalCommissions)}</p>
         </div>
@@ -251,7 +251,7 @@ export default function Employees() {
                     <p className="text-sm font-semibold text-white">{p.name}</p>
                     <p className="text-xs text-slate-500 capitalize">{t(p.role?.toLowerCase() || '')}</p>
                   </div>
-                  <div className={`text-xs font-bold px-2 py-1 rounded-full ${p.targetProgress >= 80 ? 'bg-emerald-500/20 text-emerald-400' : p.targetProgress >= 50 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                  <div className={`text-xs font-bold px-2 py-1 rounded-full ${p.targetProgress >= 80 ? 'bg-emerald-500/20 text-emerald-400' : p.targetProgress >= 50 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
                     {p.targetProgress}%
                   </div>
                 </div>
@@ -260,11 +260,11 @@ export default function Employees() {
                     <div><span className="text-slate-500">{t('profitColon')}</span> <span className="text-emerald-400 font-medium">{formatCurrency(p.totalProfit)}</span></div>
                     <div><span className="text-slate-500">{t('ordersColon')}</span> <span className="text-white font-medium">{p.transactions}</span></div>
                     <div><span className="text-slate-500">{t('targetColon')}</span> <span className="text-white font-medium">{formatCurrency(p.targetSales)}</span></div>
-                    {p.commission > 0 && <div className="col-span-2"><span className="text-slate-500">{t('commissionColon')}</span> <span className="text-amber-400 font-medium">{formatCurrency(p.commission)}</span></div>}
+                    {p.commission > 0 && <div className="col-span-2"><span className="text-slate-500">{t('commissionColon')}</span> <span className="text-emerald-400 font-medium">{formatCurrency(p.commission)}</span></div>}
                 </div>
                 {p.targetSales > 0 && (
                   <div className="mt-3 bg-slate-700/30 rounded-full h-2 overflow-hidden">
-                    <div className={`h-full rounded-full transition-all duration-500 ${p.targetProgress >= 80 ? 'bg-emerald-500' : p.targetProgress >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${p.targetProgress}%` }} />
+                    <div className={`h-full rounded-full transition-all duration-500 ${p.targetProgress >= 80 ? 'bg-emerald-500' : p.targetProgress >= 50 ? 'bg-emerald-500' : 'bg-red-500'}`} style={{ width: `${p.targetProgress}%` }} />
                   </div>
                 )}
               </div>
@@ -309,7 +309,7 @@ export default function Employees() {
                       <div><span className="text-slate-500">{t('commissionColon')}</span> <span className="text-white font-medium">{emp.commissionRate}%</span></div>
                       <div><span className="text-slate-500">{t('targetColon')}</span> <span className="text-white font-medium">{formatCurrency(emp.targetSales)}</span></div>
                       <div><span className="text-slate-500">{t('salesColon')}</span> <span className="text-emerald-400 font-medium">{formatCurrency(emp.totalSales || 0)}</span></div>
-                      {emp.commission > 0 && <div className="col-span-2"><span className="text-slate-500">{t('commissionEarned')}</span> <span className="text-amber-400 font-medium">{formatCurrency(emp.commission)}</span></div>}
+                      {emp.commission > 0 && <div className="col-span-2"><span className="text-slate-500">{t('commissionEarned')}</span> <span className="text-emerald-400 font-medium">{formatCurrency(emp.commission)}</span></div>}
                     </div>
                   </div>
 
@@ -377,17 +377,17 @@ export default function Employees() {
 
       <Modal open={setPinOpen} onClose={() => setSetPinOpen(false)} title={storedPin ? t('changePin') : t('setPin')}>
         <div className="space-y-5">
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
-            <Lock size={16} className="text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+            <Lock size={16} className="text-emerald-400 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-slate-400 leading-relaxed">{t('pinInfoText')}</p>
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-400 mb-1.5 block">{t('newPin')}</label>
-            <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-amber-500/40" type="password" maxLength={6} placeholder={t('pinPlaceholder')} value={newPin} onChange={e => setNewPin(e.target.value)} />
+            <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-emerald-500/40" type="password" maxLength={6} placeholder={t('pinPlaceholder')} value={newPin} onChange={e => setNewPin(e.target.value)} />
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-400 mb-1.5 block">{t('confirmPin')}</label>
-            <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-amber-500/40" type="password" maxLength={6} placeholder={t('pinPlaceholder')} value={confirmPin} onChange={e => setConfirmPin(e.target.value)} />
+            <input className="form-input text-center text-lg tracking-[0.3em] bg-slate-800/80 border-slate-600/50 focus:border-emerald-500/40" type="password" maxLength={6} placeholder={t('pinPlaceholder')} value={confirmPin} onChange={e => setConfirmPin(e.target.value)} />
           </div>
           <button onClick={handleSetPin} className="btn-primary w-full justify-center">{storedPin ? t('changePin') : t('setPin')}</button>
           {storedPin && <button onClick={handleRemovePin} className="btn-danger w-full justify-center">{t('removePinLock')}</button>}

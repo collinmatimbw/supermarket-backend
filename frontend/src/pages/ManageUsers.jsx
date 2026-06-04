@@ -58,10 +58,10 @@ export default function ManageUsers() {
               <tr key={user.email}>
                 <td className="font-medium text-slate-200">{user.email}</td>
                 <td className="text-slate-400 text-sm">{user.createdAt}</td>
-                <td><span className="badge badge-blue">{user.products}</span></td>
-                <td><span className="badge badge-purple">{user.sales}</span></td>
+                <td><span className="badge badge-green">{user.products}</span></td>
+                <td><span className="badge badge-green">{user.sales}</span></td>
                 <td><span className="badge badge-green">{user.customers}</span></td>
-                <td><span className="badge badge-yellow">{user.suppliers}</span></td>
+                <td><span className="badge badge-green">{user.suppliers}</span></td>
                 <td>
                   <button 
                     className="btn-danger" 

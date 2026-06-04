@@ -19,16 +19,12 @@ module.exports = {
         },
         accent: {
           primary: '#6ee7b7',
-          secondary: '#38bdf8',
-          warning: '#fbbf24',
           danger: '#f87171',
-          purple: '#a78bfa',
         }
       },
       boxShadow: {
         glass: '0 8px 32px rgba(0,0,0,0.4)',
         glow: '0 0 20px rgba(110,231,183,0.15)',
-        'glow-blue': '0 0 20px rgba(56,189,248,0.15)',
       },
       backdropBlur: {
         xs: '2px',

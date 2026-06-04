@@ -251,7 +251,7 @@ export default function Dashboard() {
           ))}
           <span className="w-px h-6 bg-slate-700/50 mx-1 hidden sm:block" />
           <button onClick={() => { setSelectedCard(null); setActivePeriod('all'); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isFiltered ? 'bg-violet-500/20 text-violet-300 ring-1 ring-violet-500/40' : 'text-slate-600 cursor-default'}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isFiltered ? 'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40' : 'text-slate-600 cursor-default'}`}
           >{t('clearFilters')}</button>
         </div>
         {isFiltered && (
@@ -284,7 +284,7 @@ export default function Dashboard() {
           {selectedCard === 'sales' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
         </button>
 
-        <button onClick={() => setSelectedCard(selectedCard === 'revenue' ? null : 'revenue')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'revenue' ? 'ring-2 ring-blue-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-blue-600 to-blue-800`}>
+        <button onClick={() => setSelectedCard(selectedCard === 'revenue' ? null : 'revenue')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'revenue' ? 'ring-2 ring-emerald-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-emerald-600 to-emerald-800`}>
           <DollarSign size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Monthly Revenue</p>
           <p className="text-2xl font-bold mt-1">{isFiltered ? formatCurrency(filteredRevenue) : formatCurrency(monthlyRevenue)}</p>
@@ -292,7 +292,7 @@ export default function Dashboard() {
           {selectedCard === 'revenue' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
         </button>
 
-        <button onClick={() => setSelectedCard(selectedCard === 'profit' ? null : 'profit')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'profit' ? 'ring-2 ring-purple-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-purple-600 to-purple-800`}>
+        <button onClick={() => setSelectedCard(selectedCard === 'profit' ? null : 'profit')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'profit' ? 'ring-2 ring-emerald-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-emerald-600 to-emerald-800`}>
           <TrendingUp size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Net Profit</p>
           <p className="text-2xl font-bold mt-1">{isFiltered ? formatCurrency(filteredProfit) : formatCurrency(totalProfit)}</p>
@@ -311,7 +311,7 @@ export default function Dashboard() {
           {selectedCard === 'debt' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
         </button>
 
-        <button onClick={() => setSelectedCard(selectedCard === 'cash' ? null : 'cash')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'cash' ? 'ring-2 ring-teal-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-teal-600 to-teal-800`}>
+        <button onClick={() => setSelectedCard(selectedCard === 'cash' ? null : 'cash')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'cash' ? 'ring-2 ring-emerald-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-emerald-600 to-emerald-800`}>
           <Wallet size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Cash in Hand</p>
           <p className="text-xl font-bold mt-1">{isFiltered ? formatCurrency(filteredCashInHand) : formatCurrency(cashInHand)}</p>
@@ -319,7 +319,7 @@ export default function Dashboard() {
           {selectedCard === 'cash' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
         </button>
 
-        <button onClick={() => setSelectedCard(selectedCard === 'stock' ? null : 'stock')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'stock' ? 'ring-2 ring-amber-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-amber-600 to-amber-800`}>
+        <button onClick={() => setSelectedCard(selectedCard === 'stock' ? null : 'stock')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'stock' ? 'ring-2 ring-red-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-red-600 to-red-800`}>
           <AlertTriangle size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Low Stock</p>
           <p className="text-xl font-bold mt-1">{lowStockItems.length}</p>
@@ -327,7 +327,7 @@ export default function Dashboard() {
           {selectedCard === 'stock' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
         </button>
 
-        <button onClick={() => setSelectedCard(selectedCard === 'capital' ? null : 'capital')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'capital' ? 'ring-2 ring-rose-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-rose-600 to-rose-800`}>
+        <button onClick={() => setSelectedCard(selectedCard === 'capital' ? null : 'capital')} className={`relative rounded-2xl p-4 text-white overflow-hidden text-left transition-all ${selectedCard === 'capital' ? 'ring-2 ring-emerald-300 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : 'hover:scale-[1.02]'} bg-gradient-to-br from-emerald-600 to-emerald-800`}>
           <PiggyBank size={16} className="opacity-80 mb-1.5" />
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Capital Injected</p>
           <p className="text-xl font-bold mt-1">{formatCurrency(totalCapitalInjected)}</p>
@@ -363,11 +363,11 @@ export default function Dashboard() {
                 <ShoppingCart size={20} className="mx-auto mb-1" />
                 <span className="text-xs font-medium">New Sale</span>
               </button>
-              <button onClick={() => setEodOpen(true)} className="p-3 rounded-xl bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors text-center">
+              <button onClick={() => setEodOpen(true)} className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-center">
                 <FileText size={20} className="mx-auto mb-1" />
                 <span className="text-xs font-medium">End of Day</span>
               </button>
-              <button onClick={() => navigate('/products')} className="p-3 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-center">
+              <button onClick={() => navigate('/products')} className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-center">
                 <Package size={20} className="mx-auto mb-1" />
                 <span className="text-xs font-medium">Add Product</span>
               </button>
@@ -380,12 +380,12 @@ export default function Dashboard() {
 
           {/* Today's Tasks */}
           {todayTasks.length > 0 && (
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Clock size={14} className="text-amber-400" />
-                <span className="text-sm font-medium text-amber-400">{todayTasks.length} task{todayTasks.length > 1 ? 's' : ''} today</span>
+                <Clock size={14} className="text-emerald-400" />
+                <span className="text-sm font-medium text-emerald-400">{todayTasks.length} task{todayTasks.length > 1 ? 's' : ''} today</span>
               </div>
-              <p className="text-xs text-amber-300/70">{cardLink('/tasks', 'View tasks')}</p>
+              <p className="text-xs text-emerald-300/70">{cardLink('/tasks', 'View tasks')}</p>
             </div>
           )}
         </div>
@@ -428,7 +428,7 @@ export default function Dashboard() {
             <div className="space-y-2">
               {filteredPendingLeads.slice(0, 5).map(lead => (
                 <div key={lead.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5">
-                  <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-xs font-bold">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs font-bold">
                     {lead.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -458,7 +458,7 @@ export default function Dashboard() {
             <div className="space-y-2">
               {filteredPendingTasks.slice(0, 5).map(task => (
                 <div key={task.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5">
-                  <div className={`w-2 h-2 rounded-full ${task.dueDate && task.dueDate < today ? 'bg-red-400' : 'bg-blue-400'}`} />
+                  <div className={`w-2 h-2 rounded-full ${task.dueDate && task.dueDate < today ? 'bg-red-400' : 'bg-emerald-400'}`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">{task.title}</p>
                     {task.dueDate && (
@@ -476,16 +476,16 @@ export default function Dashboard() {
 
       {/* Dead Stock Alert */}
       {deadStockItems.length > 0 && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle size={16} className="text-amber-400" />
-            <h3 className="text-sm font-semibold text-amber-400">Dead Stock — No Sale in 60 Days{isFiltered ? <span className="text-[10px] text-slate-500 font-normal ml-2">(filtered)</span> : ''}</h3>
+            <AlertTriangle size={16} className="text-red-400" />
+            <h3 className="text-sm font-semibold text-red-400">Dead Stock — No Sale in 60 Days{isFiltered ? <span className="text-[10px] text-slate-500 font-normal ml-2">(filtered)</span> : ''}</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             {deadStockItems.slice(0, 4).map(p => (
               <div key={p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-white/5">
                 <div>
-                  <p className="text-sm font-medium text-amber-200">{p.name}</p>
+                  <p className="text-sm font-medium text-white">{p.name}</p>
                   <p className="text-xs text-slate-500">{p.quantity} in stock · TZS {((p.price || 0) * (p.quantity || 0)).toLocaleString()} tied up</p>
                 </div>
                 <button onClick={() => navigate('/products')} className="text-xs text-emerald-400 hover:underline">Review</button>
@@ -524,10 +524,10 @@ export default function Dashboard() {
 
       {/* Notifications — admin only */}
       {(isAdmin && (notifications.filter(n => !n.read).length > 0 || localNotifs.length > 0)) && (
-        <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-5">
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-3">
-            <Bell size={16} className="text-violet-400" />
-            <h3 className="text-sm font-semibold text-violet-400">Notifications</h3>
+            <Bell size={16} className="text-emerald-400" />
+            <h3 className="text-sm font-semibold text-emerald-400">Notifications</h3>
             <button onClick={() => {
               localStorage.setItem('skyc_notifications', '[]');
               setLocalNotifs([]);
@@ -579,18 +579,18 @@ export default function Dashboard() {
               <p className="text-xl font-bold text-white mt-1">{formatCurrency(todayRevenue)}</p>
               <p className="text-xs text-slate-500">{todaySales.length} transactions</p>
             </div>
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-center">
-              <p className="text-xs text-blue-400 font-medium uppercase">Cash</p>
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
+              <p className="text-xs text-emerald-400 font-medium uppercase">Cash</p>
               <p className="text-xl font-bold text-white mt-1">{formatCurrency(cashToday)}</p>
               <p className="text-xs text-slate-500">In till today</p>
             </div>
-            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 text-center">
-              <p className="text-xs text-purple-400 font-medium uppercase">Mobile Money</p>
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
+              <p className="text-xs text-emerald-400 font-medium uppercase">Mobile Money</p>
               <p className="text-xl font-bold text-white mt-1">{formatCurrency(mobileToday)}</p>
               <p className="text-xs text-slate-500">M-Pesa / Tigo / Airtel</p>
             </div>
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-center">
-              <p className="text-xs text-amber-400 font-medium uppercase">Credit Sales</p>
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
+              <p className="text-xs text-emerald-400 font-medium uppercase">Credit Sales</p>
               <p className="text-xl font-bold text-white mt-1">{formatCurrency(creditToday)}</p>
               <p className="text-xs text-slate-500">{todaySales.filter(s => s.paymentMethod === 'credit').length} debtors</p>
             </div>
@@ -641,10 +641,10 @@ export default function Dashboard() {
           )}
 
           {outstandingDebts > 0 && (
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-center gap-3">
-              <CreditCard size={18} className="text-yellow-400 flex-shrink-0" />
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
+              <CreditCard size={18} className="text-red-400 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-yellow-400">{formatCurrency(outstandingDebts)} outstanding across {creditSales.length} debtors</p>
+                <p className="text-sm font-medium text-red-400">{formatCurrency(outstandingDebts)} outstanding across {creditSales.length} debtors</p>
                 <button onClick={() => { setEodOpen(false); navigate('/sales'); }} className="text-xs text-emerald-400 hover:underline mt-0.5">Collect payments →</button>
               </div>
             </div>

@@ -106,16 +106,16 @@ export default function Reports() {
           <p className="text-2xl font-bold text-white">TZS {totalRevenue.toLocaleString()}</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5">
-          <div className="flex items-center gap-2 text-blue-400 mb-2"><TrendingUp size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('profit')}</span></div>
+          <div className="flex items-center gap-2 text-emerald-400 mb-2"><TrendingUp size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('profit')}</span></div>
           <p className="text-2xl font-bold text-white">TZS {totalProfit.toLocaleString()}</p>
           <p className="text-xs text-slate-500 mt-1">{t('marginColon')} {profitMargin}%</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5">
-          <div className="flex items-center gap-2 text-purple-400 mb-2"><Users size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('customersLabel')}</span></div>
+          <div className="flex items-center gap-2 text-emerald-400 mb-2"><Users size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('customersLabel')}</span></div>
           <p className="text-2xl font-bold text-white">{totalCustomers}</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5">
-          <div className="flex items-center gap-2 text-amber-400 mb-2"><Package size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('lowStock')}</span></div>
+          <div className="flex items-center gap-2 text-red-400 mb-2"><Package size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('lowStock')}</span></div>
           <p className={`text-2xl font-bold ${lowStockCount > 0 ? 'text-red-400' : 'text-white'}`}>{lowStockCount}</p>
         </div>
       </div>

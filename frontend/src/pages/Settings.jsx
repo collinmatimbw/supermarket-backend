@@ -52,7 +52,7 @@ export default function Settings() {
       {/* System Info */}
       <div className="glass p-5 mb-4">
         <div className="flex items-center gap-2 mb-4">
-          <Server size={15} className="text-sky-400" />
+          <Server size={15} className="text-emerald-400" />
           <h3 className="font-semibold text-slate-200 text-sm">System Information</h3>
           <button className="ml-auto text-slate-500 hover:text-slate-300 transition-colors" onClick={loadInfo}>
             <RefreshCw size={13} />
@@ -111,7 +111,7 @@ export default function Settings() {
       {/* About */}
       <div className="glass p-5">
         <div className="flex items-center gap-2 mb-4">
-          <Info size={15} className="text-violet-400" />
+          <Info size={15} className="text-emerald-400" />
           <h3 className="font-semibold text-slate-200 text-sm">About SKYC CRM</h3>
         </div>
         <div className="space-y-2 text-sm text-slate-400">

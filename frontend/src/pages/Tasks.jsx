@@ -7,9 +7,9 @@ import { LoadingState, EmptyState } from '../components/LoadingState';
 import api from '../utils/api';
 
 const TASK_TYPES = [
-  { key: 'call', label: 'Follow-up Call', icon: Phone, color: 'text-blue-400 bg-blue-500/10' },
-  { key: 'meeting', label: 'Meeting', icon: Users, color: 'text-purple-400 bg-purple-500/10' },
-  { key: 'reminder', label: 'Customer Reminder', icon: AlertCircle, color: 'text-yellow-400 bg-yellow-500/10' },
+  { key: 'call', label: 'Follow-up Call', icon: Phone, color: 'text-emerald-400 bg-emerald-500/10' },
+  { key: 'meeting', label: 'Meeting', icon: Users, color: 'text-emerald-400 bg-emerald-500/10' },
+  { key: 'reminder', label: 'Customer Reminder', icon: AlertCircle, color: 'text-emerald-400 bg-emerald-500/10' },
   { key: 'general', label: 'General', icon: Clock, color: 'text-slate-400 bg-slate-500/10' },
 ];
 

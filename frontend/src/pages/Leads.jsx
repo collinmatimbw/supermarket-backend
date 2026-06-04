@@ -8,10 +8,10 @@ import { useLanguage } from '../context/LanguageContext';
 import api from '../utils/api';
 
 const STAGES = [
-  { key: 'new', label: 'New Lead', color: 'bg-blue-500/20 text-blue-300' },
-  { key: 'contacted', label: 'Contacted', color: 'bg-yellow-500/20 text-yellow-300' },
-  { key: 'interested', label: 'Interested', color: 'bg-purple-500/20 text-purple-300' },
-  { key: 'negotiation', label: 'Negotiation', color: 'bg-orange-500/20 text-orange-300' },
+  { key: 'new', label: 'New Lead', color: 'bg-emerald-500/20 text-emerald-300' },
+  { key: 'contacted', label: 'Contacted', color: 'bg-emerald-500/20 text-emerald-300' },
+  { key: 'interested', label: 'Interested', color: 'bg-emerald-500/20 text-emerald-300' },
+  { key: 'negotiation', label: 'Negotiation', color: 'bg-emerald-500/20 text-emerald-300' },
   { key: 'won', label: 'Won', color: 'bg-emerald-500/20 text-emerald-300' },
   { key: 'lost', label: 'Lost', color: 'bg-red-500/20 text-red-300' },
 ];
@@ -100,7 +100,7 @@ export default function Leads() {
                         </a>
                       )}
                       {lead.stage !== 'won' && lead.stage !== 'lost' && (
-                        <button onClick={e => { e.stopPropagation(); advanceStage(lead); }} className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors">
+                        <button onClick={e => { e.stopPropagation(); advanceStage(lead); }} className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors">
                           <ArrowRight size={12} />
                         </button>
                       )}

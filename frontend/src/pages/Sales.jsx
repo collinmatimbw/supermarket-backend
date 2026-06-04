@@ -193,14 +193,14 @@ export default function Sales() {
                     <td className="py-3 px-4 text-white font-medium">{sale.productName}</td>
                     <td className="py-3 px-4 text-center text-slate-300">{sale.quantity}</td>
                     <td className="py-3 px-4 text-right text-emerald-400 font-medium">{formatCurrency(sale.total)}</td>
-                    <td className="py-3 px-4 text-right text-blue-400">{formatCurrency(sale.profit)}</td>
+                    <td className="py-3 px-4 text-right text-emerald-400">{formatCurrency(sale.profit)}</td>
                     <td className="py-3 px-4 text-center">
-                      <span className={`text-xs px-2 py-1 rounded-full capitalize ${sale.paymentMethod === 'cash' ? 'bg-emerald-500/20 text-emerald-400' : sale.paymentMethod === 'mobile' ? 'bg-blue-500/20 text-blue-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full capitalize ${sale.paymentMethod === 'cash' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                         {sale.paymentMethod}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span className={`text-xs px-2 py-1 rounded-full capitalize ${sale.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : sale.paymentStatus === 'partial' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full capitalize ${sale.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : sale.paymentStatus === 'partial' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
                         {sale.paymentStatus === 'paid' ? 'Paid' : sale.paymentStatus === 'partial' ? `${formatCurrency(sale.balance)} due` : 'Debt'}
                       </span>
                     </td>

@@ -55,7 +55,7 @@ export default function Customers() {
     if (!lastSale) return { label: t('inactive'), color: 'bg-slate-500/20 text-slate-400' };
     const daysSince = Math.floor((Date.now() - new Date(lastSale.date).getTime()) / (1000 * 60 * 60 * 24));
     if (daysSince <= 30) return { label: t('active'), color: 'bg-emerald-500/20 text-emerald-400' };
-    if (daysSince <= 90) return { label: t('atRisk'), color: 'bg-yellow-500/20 text-yellow-400' };
+    if (daysSince <= 90) return { label: t('atRisk'), color: 'bg-red-500/20 text-red-400' };
     return { label: t('inactive'), color: 'bg-slate-500/20 text-slate-400' };
   };
 
@@ -157,7 +157,7 @@ export default function Customers() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button onClick={() => { setSelected(c); setProfileOpen(true); }} className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-colors text-xs font-medium">
+                  <button onClick={() => { setSelected(c); setProfileOpen(true); }} className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-xs font-medium">
                     <Eye size={12} />{t('profile')}
                   </button>
                   {c.phone && (
@@ -232,13 +232,13 @@ export default function Customers() {
                   <p className="text-xs text-slate-500">{t('totalSpent')}</p>
                   <p className="text-lg font-bold text-white mt-0.5">{formatCurrency(totalSpent)}</p>
                 </div>
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-center">
-                  <ShoppingCart size={16} className="mx-auto mb-1 text-blue-400" />
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
+                  <ShoppingCart size={16} className="mx-auto mb-1 text-emerald-400" />
                   <p className="text-xs text-slate-500">{t('visits')}</p>
                   <p className="text-lg font-bold text-white mt-0.5">{totalVisits}</p>
                 </div>
-                <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 text-center">
-                  <TrendingUp size={16} className="mx-auto mb-1 text-purple-400" />
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
+                  <TrendingUp size={16} className="mx-auto mb-1 text-emerald-400" />
                   <p className="text-xs text-slate-500">{t('avgPerVisit')}</p>
                   <p className="text-lg font-bold text-white mt-0.5">{totalVisits > 0 ? formatCurrency(Math.round(totalSpent / totalVisits)) : '—'}</p>
                 </div>
@@ -266,7 +266,7 @@ export default function Customers() {
                 </div>
                 <div className="bg-white/5 rounded-xl p-4">
                   <p className="text-xs text-slate-500">{t('lifetimeValueScore')}</p>
-                  <p className={`text-sm font-semibold mt-1 ${totalSpent >= 500000 ? 'text-emerald-400' : totalSpent >= 100000 ? 'text-yellow-400' : 'text-slate-400'}`}>
+                  <p className={`text-sm font-semibold mt-1 ${totalSpent >= 500000 ? 'text-emerald-400' : totalSpent >= 100000 ? 'text-emerald-400' : 'text-slate-400'}`}>
                     {totalSpent >= 500000 ? `⭐ ${t('highValue')}` : totalSpent >= 100000 ? `📈 ${t('growing')}` : `🆕 ${t('new')}`}
                   </p>
                 </div>
@@ -275,7 +275,7 @@ export default function Customers() {
               {/* Favorite Products */}
               {favorites.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5"><Star size={14} className="text-yellow-400" />{t('favoriteProducts')}</h4>
+                  <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5"><Star size={14} className="text-emerald-400" />{t('favoriteProducts')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {favorites.map(([name, count], i) => (
                       <span key={name} className="text-xs px-3 py-1.5 rounded-full bg-slate-700/50 text-slate-300">
@@ -309,7 +309,7 @@ export default function Customers() {
                             <td className="py-2 px-2 text-center text-slate-400 text-xs">{s.quantity}</td>
                             <td className="py-2 pl-2 text-right text-emerald-400 text-xs font-medium">{formatCurrency(s.total)}</td>
                             <td className="py-2 pl-2 text-center">
-                              <span className={`text-xs px-1.5 py-0.5 rounded-full ${s.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : s.paymentStatus === 'partial' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                              <span className={`text-xs px-1.5 py-0.5 rounded-full ${s.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : s.paymentStatus === 'partial' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
                                 {s.paymentStatus === 'paid' ? t('paid') : s.balance > 0 ? `${t('due')} ${formatCurrency(s.balance)}` : t('debt')}
                               </span>
                             </td>

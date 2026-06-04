@@ -128,7 +128,7 @@ export default function Expenses() {
                     </td>
                     <td className="py-3 px-4 text-right text-red-400 font-medium">{formatCurrency(exp.amount)}</td>
                     <td className="py-3 px-4 text-center">
-                      <span className={`text-xs px-2 py-1 rounded-full capitalize ${exp.paymentMethod === 'cash' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full capitalize ${exp.paymentMethod === 'cash' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                         {t(exp.paymentMethod)}
                       </span>
                     </td>

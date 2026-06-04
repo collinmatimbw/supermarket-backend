@@ -10,8 +10,8 @@ import { formatCurrency, exportToCSV } from '../utils/helpers';
 
 const SOURCES = [
   { value: 'personal', label: 'Personal Savings', color: 'text-emerald-400 bg-emerald-500/10' },
-  { value: 'loan', label: 'Loan', color: 'text-blue-400 bg-blue-500/10' },
-  { value: 'investor', label: 'Investor', color: 'text-purple-400 bg-purple-500/10' },
+  { value: 'loan', label: 'Loan', color: 'text-emerald-400 bg-emerald-500/10' },
+  { value: 'investor', label: 'Investor', color: 'text-emerald-400 bg-emerald-500/10' },
   { value: 'other', label: 'Other', color: 'text-slate-400 bg-slate-500/10' },
 ];
 
@@ -88,14 +88,14 @@ export default function Capital() {
           <p className="text-xl font-bold text-white">{formatCurrency(totalCapital)}</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4">
-          <TrendingUp size={16} className="text-blue-400 mb-1.5" />
+          <TrendingUp size={16} className="text-emerald-400 mb-1.5" />
           <p className="text-xs text-slate-500">{t('utilized')}</p>
           <p className="text-xl font-bold text-white">{formatCurrency(totalExpenses)}</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4">
-          <PieChart size={16} className="text-amber-400 mb-1.5" />
+          <PieChart size={16} className="text-emerald-400 mb-1.5" />
           <p className="text-xs text-slate-500">{t('remaining')}</p>
-          <p className="text-xl font-bold text-amber-400">{formatCurrency(remaining)}</p>
+          <p className="text-xl font-bold text-emerald-400">{formatCurrency(remaining)}</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4 flex flex-col justify-center">
           <p className="text-xs text-slate-500 mb-1.5">{t('utilizationProgress')}</p>

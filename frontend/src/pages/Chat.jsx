@@ -5,15 +5,15 @@ import { formatCurrency } from '../utils/helpers';
 
 const QUESTIONS = [
   { type: 'sales_summary', label: 'Sales Summary', icon: DollarSign, color: 'emerald', desc: 'Revenue, profit, transactions' },
-  { type: 'top_products', label: 'Top Products', icon: ShoppingCart, color: 'blue', desc: 'Best selling items ranked' },
-  { type: 'profit_analysis', label: 'Profit Analysis', icon: TrendingUp, color: 'purple', desc: 'Margins, net profit, trends' },
+  { type: 'top_products', label: 'Top Products', icon: ShoppingCart, color: 'emerald', desc: 'Best selling items ranked' },
+  { type: 'profit_analysis', label: 'Profit Analysis', icon: TrendingUp, color: 'emerald', desc: 'Margins, net profit, trends' },
   { type: 'expense_breakdown', label: 'Expense Breakdown', icon: TrendingDown, color: 'red', desc: 'Where money is going' },
-  { type: 'debt_overview', label: 'Debt Overview', icon: CreditCard, color: 'amber', desc: 'Outstanding balances' },
-  { type: 'inventory_alerts', label: 'Inventory Alerts', icon: Package, color: 'rose', desc: 'Low stock & dead stock' },
-  { type: 'sales_trend', label: 'Sales Trend', icon: BarChart3, color: 'cyan', desc: 'Daily trend & growth' },
-  { type: 'customer_insights', label: 'Customer Insights', icon: Users, color: 'indigo', desc: 'Top customers & repeat rate' },
-  { type: 'capital_analysis', label: 'Capital Analysis', icon: PiggyBank, color: 'teal', desc: 'Injected vs utilized' },
-  { type: 'prediction', label: 'Predictions', icon: Target, color: 'violet', desc: 'Forecast next 7 days' },
+  { type: 'debt_overview', label: 'Debt Overview', icon: CreditCard, color: 'red', desc: 'Outstanding balances' },
+  { type: 'inventory_alerts', label: 'Inventory Alerts', icon: Package, color: 'red', desc: 'Low stock & dead stock' },
+  { type: 'sales_trend', label: 'Sales Trend', icon: BarChart3, color: 'emerald', desc: 'Daily trend & growth' },
+  { type: 'customer_insights', label: 'Customer Insights', icon: Users, color: 'emerald', desc: 'Top customers & repeat rate' },
+  { type: 'capital_analysis', label: 'Capital Analysis', icon: PiggyBank, color: 'emerald', desc: 'Injected vs utilized' },
+  { type: 'prediction', label: 'Predictions', icon: Target, color: 'emerald', desc: 'Forecast next 7 days' },
 ];
 
 const PERIODS = [
@@ -26,15 +26,7 @@ const PERIODS = [
 
 const COLORS = {
   emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', icon: 'bg-emerald-500/20' },
-  blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/20', text: 'text-blue-400', icon: 'bg-blue-500/20' },
-  purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/20', text: 'text-purple-400', icon: 'bg-purple-500/20' },
   red: { bg: 'bg-red-500/10', border: 'border-red-500/20', text: 'text-red-400', icon: 'bg-red-500/20' },
-  amber: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400', icon: 'bg-amber-500/20' },
-  rose: { bg: 'bg-rose-500/10', border: 'border-rose-500/20', text: 'text-rose-400', icon: 'bg-rose-500/20' },
-  cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-400', icon: 'bg-cyan-500/20' },
-  indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', text: 'text-indigo-400', icon: 'bg-indigo-500/20' },
-  teal: { bg: 'bg-teal-500/10', border: 'border-teal-500/20', text: 'text-teal-400', icon: 'bg-teal-500/20' },
-  violet: { bg: 'bg-violet-500/10', border: 'border-violet-500/20', text: 'text-violet-400', icon: 'bg-violet-500/20' },
 };
 
 function StatBox({ label, value, color }) {
@@ -152,7 +144,7 @@ function ResultCard({ result }) {
               <p className="text-sm font-medium text-white">{d.name}</p>
               <p className="text-[10px] text-slate-500">{d.count} sales · {d.phone}</p>
             </div>
-            <p className="text-sm font-semibold text-amber-400">{formatCurrency(d.totalDebt)}</p>
+            <p className="text-sm font-semibold text-red-400">{formatCurrency(d.totalDebt)}</p>
           </div>
         ))}
       </div>
@@ -163,27 +155,27 @@ function ResultCard({ result }) {
     return (
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
-          <StatBox label="Total Products" value={result.totalProducts} color="blue" />
+          <StatBox label="Total Products" value={result.totalProducts} color="emerald" />
           <StatBox label="Inventory Value" value={formatCurrency(result.totalInventoryValue)} color="emerald" />
         </div>
         {result.lowStock.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-rose-400 mb-1.5">Low Stock ({result.lowStockCount})</p>
+            <p className="text-xs font-semibold text-red-400 mb-1.5">Low Stock ({result.lowStockCount})</p>
             {result.lowStock.slice(0, 5).map(p => (
               <div key={p.name} className="flex items-center justify-between p-2 rounded-lg bg-white/5 mb-1">
                 <p className="text-sm text-white">{p.name}</p>
-                <p className="text-sm text-rose-400">{p.qty} left · {formatCurrency(p.value)}</p>
+                <p className="text-sm text-red-400">{p.qty} left · {formatCurrency(p.value)}</p>
               </div>
             ))}
           </div>
         )}
         {result.deadStock.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-amber-400 mb-1.5">Dead Stock ({result.deadStockCount})</p>
+            <p className="text-xs font-semibold text-red-400 mb-1.5">Dead Stock ({result.deadStockCount})</p>
             {result.deadStock.slice(0, 5).map(p => (
               <div key={p.name} className="flex items-center justify-between p-2 rounded-lg bg-white/5 mb-1">
                 <p className="text-sm text-white">{p.name}</p>
-                <p className="text-sm text-amber-400">{p.qty} units · {formatCurrency(p.value)} tied up</p>
+                <p className="text-sm text-red-400">{p.qty} units · {formatCurrency(p.value)} tied up</p>
               </div>
             ))}
           </div>
