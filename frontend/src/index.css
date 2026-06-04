@@ -31,13 +31,13 @@
   --bg-card: rgba(255, 255, 255, 0.85);
   --border: rgba(0,0,0,0.06);
   --accent: #059669;
-  --text-primary: #1c1917;
-  --text-muted: #57534e;
+  --text-primary: #000000;
+  --text-muted: #444444;
   --glass-bg: rgba(255, 255, 255, 0.8);
   --glass-border: rgba(0,0,0,0.06);
   --input-bg: #ffffff;
   --input-border: rgba(0,0,0,0.1);
-  --table-header: #57534e;
+  --table-header: #444444;
   --table-row-hover: rgba(0,0,0,0.025);
   --modal-overlay: rgba(0,0,0,0.25);
   --green: #059669;
@@ -48,10 +48,10 @@
 
 [data-theme="light"] .btn-secondary {
   background: rgba(0,0,0,0.04);
-  color: #1c1917;
+  color: #000000;
   border-color: rgba(0,0,0,0.08);
 }
-[data-theme="light"] .btn-secondary:hover { background: rgba(0,0,0,0.08); color: #000000; }
+[data-theme="light"] .btn-secondary:hover { background: rgba(0,0,0,0.08); }
 
 [data-theme="light"] .nav-active {
   background: rgba(5,150,105,0.08);
