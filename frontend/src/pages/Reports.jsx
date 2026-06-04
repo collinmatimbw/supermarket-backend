@@ -7,12 +7,14 @@ import {
 } from 'chart.js';
 import PageHeader from '../components/PageHeader';
 import { LoadingState } from '../components/LoadingState';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../utils/api';
 import { exportToCSV } from '../utils/helpers';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement, Filler);
 
 export default function Reports() {
+  const { t } = useLanguage();
   const [analytics, setAnalytics] = useState(null);
   const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
@@ -20,11 +22,11 @@ export default function Reports() {
   const [period, setPeriod] = useState('30d');
 
   const PERIODS = [
-    { key: '7d', label: '7 Days' },
-    { key: '30d', label: '30 Days' },
-    { key: '90d', label: '90 Days' },
-    { key: '1y', label: '1 Year' },
-    { key: 'all', label: 'All Time' },
+    { key: '7d', label: t('days7') },
+    { key: '30d', label: t('days30') },
+    { key: '90d', label: t('days90') },
+    { key: '1y', label: t('year1') },
+    { key: 'all', label: t('allTime') },
   ];
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function Reports() {
     }).finally(() => setLoading(false));
   }, [period]);
 
-  if (loading) return <LoadingState message="Loading reports..." />;
+  if (loading) return <LoadingState message={t('loadingReports')} />;
 
   const totalRevenue = sales.reduce((s, sale) => s + Number(sale.total || 0), 0);
   const totalProfit = sales.reduce((s, sale) => s + Number(sale.profit || 0), 0);
@@ -75,7 +77,7 @@ export default function Reports() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <PageHeader title="Reports" subtitle="Profit & Loss, sales, and customer reports" action={
+      <PageHeader title={t('reports')} subtitle={t('reportsSubtitle')} action={
         <button onClick={() => exportToCSV(sales, 'sales-report', [
           { label: 'Date', key: 'date' },
           { label: 'Product', key: 'productName' },
@@ -84,7 +86,7 @@ export default function Reports() {
           { label: 'Profit', key: 'profit' },
           { label: 'Payment', key: 'paymentMethod' },
           { label: 'Customer', key: 'customerName' },
-        ])} className="btn-ghost text-sm"><Download size={14} className="mr-1.5" />Export CSV</button>
+        ])} className="btn-ghost text-sm"><Download size={14} className="mr-1.5" />{t('exportCsv')}</button>
       } />
 
       {/* Period Selector */}
@@ -100,20 +102,20 @@ export default function Reports() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5">
-          <div className="flex items-center gap-2 text-emerald-400 mb-2"><DollarSign size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Revenue</span></div>
+          <div className="flex items-center gap-2 text-emerald-400 mb-2"><DollarSign size={18} />            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('revenue')}</span></div>
           <p className="text-2xl font-bold text-white">TZS {totalRevenue.toLocaleString()}</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5">
-          <div className="flex items-center gap-2 text-blue-400 mb-2"><TrendingUp size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Profit</span></div>
+          <div className="flex items-center gap-2 text-blue-400 mb-2"><TrendingUp size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('profit')}</span></div>
           <p className="text-2xl font-bold text-white">TZS {totalProfit.toLocaleString()}</p>
-          <p className="text-xs text-slate-500 mt-1">Margin: {profitMargin}%</p>
+          <p className="text-xs text-slate-500 mt-1">{t('marginColon')} {profitMargin}%</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5">
-          <div className="flex items-center gap-2 text-purple-400 mb-2"><Users size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Customers</span></div>
+          <div className="flex items-center gap-2 text-purple-400 mb-2"><Users size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('customersLabel')}</span></div>
           <p className="text-2xl font-bold text-white">{totalCustomers}</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5">
-          <div className="flex items-center gap-2 text-amber-400 mb-2"><Package size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Low Stock</span></div>
+          <div className="flex items-center gap-2 text-amber-400 mb-2"><Package size={18} /><span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('lowStock')}</span></div>
           <p className={`text-2xl font-bold ${lowStockCount > 0 ? 'text-red-400' : 'text-white'}`}>{lowStockCount}</p>
         </div>
       </div>
@@ -122,7 +124,7 @@ export default function Reports() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-white">Sales Trend</h3>
+            <h3 className="font-semibold text-white">{t('salesTrend')}</h3>
             <TrendingUp size={16} className="text-slate-500" />
           </div>
           <div style={{ height: 220 }}>

@@ -4,12 +4,14 @@ import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { LoadingState, EmptyState } from '../components/LoadingState';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../utils/api';
 import { formatCurrency, exportToCSV, formatDate } from '../utils/helpers';
 
 const emptyForm = { name: '', phone: '', email: '', address: '' };
 
 export default function Customers() {
+  const { t } = useLanguage();
   const [customers, setCustomers] = useState([]);
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,26 +52,26 @@ export default function Customers() {
 
   const getStatus = (customerId) => {
     const lastSale = getLastPurchase(customerId);
-    if (!lastSale) return { label: 'Inactive', color: 'bg-slate-500/20 text-slate-400' };
+    if (!lastSale) return { label: t('inactive'), color: 'bg-slate-500/20 text-slate-400' };
     const daysSince = Math.floor((Date.now() - new Date(lastSale.date).getTime()) / (1000 * 60 * 60 * 24));
-    if (daysSince <= 30) return { label: 'Active', color: 'bg-emerald-500/20 text-emerald-400' };
-    if (daysSince <= 90) return { label: 'At Risk', color: 'bg-yellow-500/20 text-yellow-400' };
-    return { label: 'Inactive', color: 'bg-slate-500/20 text-slate-400' };
+    if (daysSince <= 30) return { label: t('active'), color: 'bg-emerald-500/20 text-emerald-400' };
+    if (daysSince <= 90) return { label: t('atRisk'), color: 'bg-yellow-500/20 text-yellow-400' };
+    return { label: t('inactive'), color: 'bg-slate-500/20 text-slate-400' };
   };
 
   const openAdd = () => { setEditing(null); setForm(emptyForm); setModalOpen(true); };
   const openEdit = (c) => { setEditing(c); setForm({ name: c.name, phone: c.phone, email: c.email, address: c.address }); setModalOpen(true); };
 
   const handleSave = async () => {
-    if (!form.name) return toast.error('Customer name is required');
+    if (!form.name) return toast.error(t('customerNameRequired'));
     setSaving(true);
     try {
       if (editing) {
         await api.put(`/customers/${editing.id}`, form);
-        toast.success('Customer updated');
+        toast.success(t('customerUpdated'));
       } else {
         await api.post('/customers', form);
-        toast.success('Customer added');
+        toast.success(t('customerAdded'));
       }
       setModalOpen(false);
       load();
@@ -78,19 +80,19 @@ export default function Customers() {
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete customer "${name}"?`)) return;
+    if (!window.confirm(`${t('deleteCustomer')} "${name}"?`)) return;
     try {
       await api.delete(`/customers/${id}`);
-      toast.success('Customer deleted');
+      toast.success(t('customerDeleted'));
       load();
     } catch (e) { toast.error(e.message); }
   };
 
-  if (loading) return <LoadingState message="Loading customers..." />;
+  if (loading) return <LoadingState message={t('loadingCustomers')} />;
 
   return (
     <div className="animate-fade-in space-y-6">
-      <PageHeader title="Customers" subtitle={`${customers.length} registered customers`} action={
+      <PageHeader title={t('customers')} subtitle={`${customers.length} ${t('registeredCustomers')}`} action={
         <div className="flex gap-2">
           <button onClick={() => exportToCSV(customers.map(c => ({
             ...c,
@@ -105,23 +107,23 @@ export default function Customers() {
             { label: 'Total Spent', key: 'totalSpent' },
             { label: 'Last Purchase', key: 'lastPurchase' },
             { label: 'Status', key: 'status' },
-          ])} className="btn-ghost text-sm"><Download size={14} className="mr-1.5" />Export</button>
-          <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />Add Customer</button>
+          ])} className="btn-ghost text-sm"><Download size={14} className="mr-1.5" />{t('export')}</button>
+          <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />{t('addCustomer')}</button>
         </div>
       } />
 
       {/* Search */}
       <div className="relative max-w-md">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-        <input className="form-input pl-9" placeholder="Search by name or phone..." value={search} onChange={e => setSearch(e.target.value)} />
+        <input className="form-input pl-9" placeholder={t('searchByNameOrPhone')} value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
       {/* Customer Cards */}
       {filtered.length === 0 ? (
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-12 text-center">
           <Users size={48} className="text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400 font-medium">No customers found</p>
-          <p className="text-slate-500 text-sm mt-1">Add your first customer to get started</p>
+          <p className="text-slate-400 font-medium">{t('noCustomersFound')}</p>
+          <p className="text-slate-500 text-sm mt-1">{t('addFirstCustomer')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -150,31 +152,31 @@ export default function Customers() {
                 <div className="space-y-1.5 mb-3">
                   {c.phone && <p className="text-xs text-slate-400 flex items-center gap-1.5"><Phone size={11} />{c.phone}</p>}
                   {c.email && <p className="text-xs text-slate-400 flex items-center gap-1.5"><Mail size={11} />{c.email}</p>}
-                  {lastSale && <p className="text-xs text-slate-500">Last purchase: {lastSale.date}</p>}
+                  {lastSale && <p className="text-xs text-slate-500">{t('lastPurchase')}: {lastSale.date}</p>}
                   {totalSpent > 0 && <p className="text-xs font-medium text-emerald-400">TZS {totalSpent.toLocaleString()}</p>}
                 </div>
 
                 <div className="flex gap-2">
                   <button onClick={() => { setSelected(c); setProfileOpen(true); }} className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-colors text-xs font-medium">
-                    <Eye size={12} />Profile
+                    <Eye size={12} />{t('profile')}
                   </button>
                   {c.phone && (
                     <>
                       <a href={`tel:${c.phone}`} className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-xs font-medium">
-                        <Phone size={12} />Call
+                        <Phone size={12} />{t('call')}
                       </a>
                       <a href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors text-xs font-medium">
-                        <MessageCircle size={12} />WhatsApp
+                        <MessageCircle size={12} />{t('whatsApp')}
                       </a>
                     </>
                   )}
                 </div>
                 <div className="flex gap-2 mt-2">
                   <button onClick={() => openEdit(c)} className="flex-1 p-2 rounded-xl bg-slate-500/10 text-slate-400 hover:bg-slate-500/20 transition-colors text-xs font-medium">
-                    <Edit2 size={12} className="mr-1 inline" />Edit
+                    <Edit2 size={12} className="mr-1 inline" />{t('edit')}
                   </button>
                   <button onClick={() => handleDelete(c.id, c.name)} className="flex-1 p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-xs font-medium">
-                    <Trash2 size={12} className="mr-1 inline" />Delete
+                    <Trash2 size={12} className="mr-1 inline" />{t('delete')}
                   </button>
                 </div>
               </div>
@@ -216,7 +218,7 @@ export default function Customers() {
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium inline-block mt-1 ${status.color}`}>{status.label}</span>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {c.phone && <a href={`tel:${c.phone}`} className="btn-ghost text-xs px-2 py-1"><Phone size={11} className="mr-1" />{c.phone}</a>}
-                    {c.phone && <a href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs px-2 py-1"><MessageCircle size={11} className="mr-1" />WhatsApp</a>}
+                    {c.phone && <a href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs px-2 py-1"><MessageCircle size={11} className="mr-1" />{t('whatsApp')}</a>}
                   </div>
                   {c.email && <p className="text-xs text-slate-500 mt-1"><Mail size={11} className="mr-1 inline" />{c.email}</p>}
                   {c.address && <p className="text-xs text-slate-500 mt-0.5"><MapPin size={11} className="mr-1 inline" />{c.address}</p>}
@@ -227,22 +229,22 @@ export default function Customers() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
                   <DollarSign size={16} className="mx-auto mb-1 text-emerald-400" />
-                  <p className="text-xs text-slate-500">Total Spent</p>
+                  <p className="text-xs text-slate-500">{t('totalSpent')}</p>
                   <p className="text-lg font-bold text-white mt-0.5">{formatCurrency(totalSpent)}</p>
                 </div>
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-center">
                   <ShoppingCart size={16} className="mx-auto mb-1 text-blue-400" />
-                  <p className="text-xs text-slate-500">Visits</p>
+                  <p className="text-xs text-slate-500">{t('visits')}</p>
                   <p className="text-lg font-bold text-white mt-0.5">{totalVisits}</p>
                 </div>
                 <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 text-center">
                   <TrendingUp size={16} className="mx-auto mb-1 text-purple-400" />
-                  <p className="text-xs text-slate-500">Avg per Visit</p>
+                  <p className="text-xs text-slate-500">{t('avgPerVisit')}</p>
                   <p className="text-lg font-bold text-white mt-0.5">{totalVisits > 0 ? formatCurrency(Math.round(totalSpent / totalVisits)) : '—'}</p>
                 </div>
                 <div className={outstandingBalance > 0 ? 'bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center' : 'bg-slate-500/10 border border-slate-500/20 rounded-xl p-4 text-center'}>
                   <CreditCard size={16} className={`mx-auto mb-1 ${outstandingBalance > 0 ? 'text-red-400' : 'text-slate-400'}`} />
-                  <p className="text-xs text-slate-500">Balance Due</p>
+                  <p className="text-xs text-slate-500">{t('balanceDue')}</p>
                   <p className={`text-lg font-bold mt-0.5 ${outstandingBalance > 0 ? 'text-red-400' : 'text-white'}`}>{outstandingBalance > 0 ? formatCurrency(outstandingBalance) : '—'}</p>
                 </div>
               </div>
@@ -250,22 +252,22 @@ export default function Customers() {
               {/* Additional stats */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white/5 rounded-xl p-4">
-                  <p className="text-xs text-slate-500">Last Purchase</p>
-                  <p className="text-sm font-semibold text-white mt-1">{lastSale ? `${lastSale.date} · ${formatCurrency(lastSale.total)}` : 'No purchases'}</p>
-                  {daysSinceLast !== null && <p className="text-xs text-slate-500 mt-0.5">{daysSinceLast} days ago</p>}
+                  <p className="text-xs text-slate-500">{t('lastPurchase')}</p>
+                  <p className="text-sm font-semibold text-white mt-1">{lastSale ? `${lastSale.date} · ${formatCurrency(lastSale.total)}` : t('noPurchases')}</p>
+                  {daysSinceLast !== null && <p className="text-xs text-slate-500 mt-0.5">{daysSinceLast} {t('daysAgo')}</p>}
                 </div>
                 <div className="bg-white/5 rounded-xl p-4">
-                  <p className="text-xs text-slate-500">Profit Generated</p>
+                  <p className="text-xs text-slate-500">{t('profitGenerated')}</p>
                   <p className="text-sm font-semibold text-emerald-400 mt-1">{formatCurrency(totalProfit)}</p>
                 </div>
                 <div className="bg-white/5 rounded-xl p-4">
-                  <p className="text-xs text-slate-500">Customer Since</p>
-                  <p className="text-sm font-semibold text-white mt-1">{c.dateAdded || 'N/A'}</p>
+                  <p className="text-xs text-slate-500">{t('customerSince')}</p>
+                  <p className="text-sm font-semibold text-white mt-1">{c.dateAdded || t('na')}</p>
                 </div>
                 <div className="bg-white/5 rounded-xl p-4">
-                  <p className="text-xs text-slate-500">Lifetime Value Score</p>
+                  <p className="text-xs text-slate-500">{t('lifetimeValueScore')}</p>
                   <p className={`text-sm font-semibold mt-1 ${totalSpent >= 500000 ? 'text-emerald-400' : totalSpent >= 100000 ? 'text-yellow-400' : 'text-slate-400'}`}>
-                    {totalSpent >= 500000 ? '⭐ High Value' : totalSpent >= 100000 ? '📈 Growing' : '🆕 New'}
+                    {totalSpent >= 500000 ? `⭐ ${t('highValue')}` : totalSpent >= 100000 ? `📈 ${t('growing')}` : `🆕 ${t('new')}`}
                   </p>
                 </div>
               </div>
@@ -273,7 +275,7 @@ export default function Customers() {
               {/* Favorite Products */}
               {favorites.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5"><Star size={14} className="text-yellow-400" />Favorite Products</h4>
+                  <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5"><Star size={14} className="text-yellow-400" />{t('favoriteProducts')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {favorites.map(([name, count], i) => (
                       <span key={name} className="text-xs px-3 py-1.5 rounded-full bg-slate-700/50 text-slate-300">
@@ -287,16 +289,16 @@ export default function Customers() {
               {/* Recent Purchases */}
               {recentPurchases.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-white mb-2">Recent Purchases</h4>
+                  <h4 className="text-sm font-semibold text-white mb-2">{t('recentPurchases')}</h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-slate-500 border-b border-slate-700">
-                          <th className="text-left py-2 pr-2 font-medium text-xs">Date</th>
-                          <th className="text-left py-2 px-2 font-medium text-xs">Product</th>
-                          <th className="text-center py-2 px-2 font-medium text-xs">Qty</th>
-                          <th className="text-right py-2 pl-2 font-medium text-xs">Total</th>
-                          <th className="text-center py-2 pl-2 font-medium text-xs">Status</th>
+                          <th className="text-left py-2 pr-2 font-medium text-xs">{t('date')}</th>
+                          <th className="text-left py-2 px-2 font-medium text-xs">{t('product')}</th>
+                          <th className="text-center py-2 px-2 font-medium text-xs">{t('qty')}</th>
+                          <th className="text-right py-2 pl-2 font-medium text-xs">{t('total')}</th>
+                          <th className="text-center py-2 pl-2 font-medium text-xs">{t('status')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -308,7 +310,7 @@ export default function Customers() {
                             <td className="py-2 pl-2 text-right text-emerald-400 text-xs font-medium">{formatCurrency(s.total)}</td>
                             <td className="py-2 pl-2 text-center">
                               <span className={`text-xs px-1.5 py-0.5 rounded-full ${s.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : s.paymentStatus === 'partial' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                                {s.paymentStatus === 'paid' ? 'Paid' : s.balance > 0 ? `Due ${formatCurrency(s.balance)}` : 'Debt'}
+                                {s.paymentStatus === 'paid' ? t('paid') : s.balance > 0 ? `${t('due')} ${formatCurrency(s.balance)}` : t('debt')}
                               </span>
                             </td>
                           </tr>
@@ -324,26 +326,26 @@ export default function Customers() {
       </Modal>
 
       {/* Add/Edit Modal */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Customer' : 'Add Customer'}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? t('editCustomer') : t('addCustomer')}>
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">Name *</label>
-            <input className="form-input" placeholder="Customer name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('name')} *</label>
+            <input className="form-input" placeholder={t('customerName')} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">Phone</label>
-            <input className="form-input" placeholder="Phone number" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('phone')}</label>
+            <input className="form-input" placeholder={t('phonePlaceholder')} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">Email</label>
-            <input className="form-input" placeholder="Email address" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('email')}</label>
+            <input className="form-input" placeholder={t('emailPlaceholder')} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">Address</label>
-            <input className="form-input" placeholder="Address" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
+            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('address')}</label>
+            <input className="form-input" placeholder={t('address')} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
           </div>
           <button onClick={handleSave} className="btn-primary w-full justify-center" disabled={saving}>
-            {saving ? 'Saving...' : editing ? 'Update Customer' : 'Add Customer'}
+            {saving ? t('saving') : editing ? t('editCustomer') : t('addCustomer')}
           </button>
         </div>
       </Modal>

@@ -23,7 +23,7 @@ export default function Login({ onSignUpClick }) {
       localStorage.setItem('skyc_auth', JSON.stringify(res.data.data));
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Invalid email or password');
+      setError(err.message || t('invalidEmailOrPassword'));
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ export default function Login({ onSignUpClick }) {
         <div className="text-center mb-8">
           <img src="/mylogo.png" alt="SKYC CRM" className="w-16 h-16 mx-auto mb-4 rounded-xl" style={{ background: 'linear-gradient(135deg, #059669, #0891b2)' }} />
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>SKYC CRM</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Sign in to your account</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{t('signInToAccount')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="glass p-6 space-y-4">
@@ -58,13 +58,13 @@ export default function Login({ onSignUpClick }) {
           )}
 
           <div>
-            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Email</label>
+            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>{t('email')}</label>
             <div className="relative">
               <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
                 className="form-input pl-9 text-center"
                 type="email"
-                placeholder="your@email.com"
+                placeholder={t('yourEmail')}
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
                 autoComplete="email"
@@ -74,13 +74,13 @@ export default function Login({ onSignUpClick }) {
           </div>
 
           <div>
-            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Password</label>
+            <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-muted)' }}>{t('password')}</label>
             <div className="relative">
               <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
                 className="form-input pl-9 text-center"
                 type="password"
-                placeholder="Your password"
+                placeholder={t('yourPassword')}
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 autoComplete="current-password"
@@ -90,14 +90,14 @@ export default function Login({ onSignUpClick }) {
           </div>
 
           <button type="submit" className="btn-primary w-full justify-center" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? t('signingIn') : t('signIn')}
           </button>
           
           <div className="text-center pt-2">
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              Don't have an account?{' '}
+              {t('noAccount')}{' '}
               <button type="button" onClick={onSignUpClick} className="text-emerald-400 hover:underline font-medium">
-                Sign Up
+                {t('signUp')}
               </button>
             </p>
           </div>

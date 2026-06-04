@@ -4,12 +4,14 @@ import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { LoadingState, EmptyState } from '../components/LoadingState';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../utils/api';
 import { formatCurrency, isLowStock, exportToCSV } from '../utils/helpers';
 
 const emptyForm = { name: '', category: '', quantity: 0, price: 0, costPrice: 0, unit: '', expiryDate: '', batch: '', warehouse: '' };
 
 export default function Products() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -33,15 +35,15 @@ export default function Products() {
   const openEdit = (p) => { setEditing(p); setForm({ name: p.name, category: p.category || '', quantity: p.quantity || 0, price: p.price || 0, costPrice: p.costPrice || 0, unit: p.unit || '', expiryDate: p.expiryDate || '', batch: p.batch || '', warehouse: p.warehouse || '' }); setModalOpen(true); };
 
   const handleSave = async () => {
-    if (!form.name) return toast.error('Product name is required');
+    if (!form.name) return toast.error(t('productNameRequired'));
     setSaving(true);
     try {
       if (editing) {
         await api.put(`/products/${editing.id}`, form);
-        toast.success('Product updated');
+        toast.success(t('productUpdated'));
       } else {
         await api.post('/products', form);
-        toast.success('Product added');
+        toast.success(t('productAdded'));
       }
       setModalOpen(false);
       load();
@@ -50,22 +52,22 @@ export default function Products() {
   };
 
   const handleDelete = async (id, name) => {
-    const removeOnly = window.confirm(`Remove "${name}" from view?\n\nOK = Remove from web only\nCancel = Permanently delete`);
+    const removeOnly = window.confirm(`${t('removeFromView')}\n\n${t('cancel')} = ${t('permanentlyDeleteProduct')}`);
     if (removeOnly) {
-      try { await api.delete(`/products/${id}`); toast.success('Removed'); load(); } catch (e) { toast.error(e.message); }
+      try { await api.delete(`/products/${id}`); toast.success(t('productRemoved')); load(); } catch (e) { toast.error(e.message); }
       return;
     }
-    const confirmPerm = window.confirm(`Permanently delete "${name}"?`);
+    const confirmPerm = window.confirm(`${t('permanentlyDeleteProduct')} "${name}"?`);
     if (confirmPerm) {
-      try { await api.delete(`/products/${id}?permanent=true`); toast.success('Deleted'); load(); } catch (e) { toast.error(e.message); }
+      try { await api.delete(`/products/${id}?permanent=true`); toast.success(t('productDeleted')); load(); } catch (e) { toast.error(e.message); }
     }
   };
 
-  if (loading) return <LoadingState message="Loading products..." />;
+  if (loading) return <LoadingState message={t('loadingProducts')} />;
 
   return (
     <div className="animate-fade-in space-y-6">
-      <PageHeader title="Products" subtitle={`${products.length} products · ${lowStockItems.length} low stock`} action={
+      <PageHeader title={t('products')} subtitle={`${products.length} ${t('productsLabel')} · ${lowStockItems.length} ${t('lowStockLabel')}`} action={
         <div className="flex gap-2">
           <button onClick={() => exportToCSV(products, 'products-export', [
             { label: 'Name', key: 'name' },
@@ -77,8 +79,8 @@ export default function Products() {
             { label: 'Expiry', key: 'expiryDate' },
             { label: 'Batch', key: 'batch' },
             { label: 'Warehouse', key: 'warehouse' },
-          ])} className="btn-ghost text-sm"><Download size={14} className="mr-1.5" />Export</button>
-          <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />Add Product</button>
+          ])} className="btn-ghost text-sm"><Download size={14} className="mr-1.5" />{t('export')}</button>
+          <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />{t('addProduct')}</button>
         </div>
       } />
 
@@ -87,7 +89,7 @@ export default function Products() {
         <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-center gap-3">
           <AlertTriangle size={18} className="text-red-400 flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-red-400">{lowStockItems.length} product{lowStockItems.length > 1 ? 's' : ''} low on stock</p>
+            <p className="text-sm font-medium text-red-400">{lowStockItems.length} {t('productSLowStock')}</p>
             <p className="text-xs text-red-400/70">{lowStockItems.map(p => p.name).join(', ')}</p>
           </div>
         </div>
@@ -95,13 +97,13 @@ export default function Products() {
 
       <div className="relative max-w-md">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-        <input className="form-input pl-9" placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} />
+        <input className="form-input pl-9" placeholder={t('searchProducts')} value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
       {filtered.length === 0 ? (
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-12 text-center">
           <Package size={48} className="text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400 font-medium">No products found</p>
+          <p className="text-slate-400 font-medium">{t('noProductsFound')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -123,23 +125,23 @@ export default function Products() {
 
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <div>
-                    <p className="text-xs text-slate-500">Sell Price</p>
+                    <p className="text-xs text-slate-500">{t('sellPrice')}</p>
                     <p className="text-sm font-semibold text-white">{formatCurrency(p.price)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Cost Price</p>
+                    <p className="text-xs text-slate-500">{t('costPrice')}</p>
                     <p className="text-sm text-slate-300">{formatCurrency(p.costPrice)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Profit/Item</p>
+                    <p className="text-xs text-slate-500">{t('profitPerItem')}</p>
                     <p className={`text-sm font-semibold ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                       {formatCurrency(profit)} <span className="text-xs ml-0.5">({profitMargin}%)</span>
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Stock</p>
+                    <p className="text-xs text-slate-500">{t('stock')}</p>
                     <p className={`text-sm font-semibold ${low ? 'text-red-400' : 'text-white'}`}>
-                      {p.quantity} {p.unit || 'units'}
+                      {p.quantity} {p.unit || t('units')}
                     </p>
                   </div>
                 </div>
@@ -153,7 +155,7 @@ export default function Products() {
                 )}
 
                 <button onClick={() => handleDelete(p.id, p.name)} className="w-full p-2 rounded-xl bg-red-500/5 text-red-400 hover:bg-red-500/10 transition-colors text-xs font-medium">
-                  Remove
+                  {t('remove')}
                 </button>
               </div>
             );
@@ -161,48 +163,48 @@ export default function Products() {
         </div>
       )}
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Product' : 'Add Product'}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? t('editProduct') : t('addProduct')}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Name *</label>
-              <input className="form-input" placeholder="Product name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('nameRequired')}</label>
+              <input className="form-input" placeholder={t('productNamePlaceholder')} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Category</label>
-              <input className="form-input" placeholder="Category" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} />
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('category')}</label>
+              <input className="form-input" placeholder={t('categoryPlaceholder')} value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Unit</label>
-              <input className="form-input" placeholder="pcs, kg, ltr" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} />
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('unit')}</label>
+              <input className="form-input" placeholder={t('unitPlaceholder')} value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Cost Price (TZS)</label>
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('costPriceTzs')}</label>
               <input className="form-input" type="number" min={0} placeholder="0" value={form.costPrice} onChange={e => setForm({ ...form, costPrice: Number(e.target.value) })} />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Sell Price (TZS)</label>
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('sellPriceTzs')}</label>
               <input className="form-input" type="number" min={0} placeholder="0" value={form.price} onChange={e => setForm({ ...form, price: Number(e.target.value) })} />
             </div>
             <div className="col-span-2">
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Quantity in Stock</label>
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('qtyInStock')}</label>
               <input className="form-input" type="number" min={0} placeholder="0" value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Expiry Date</label>
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('expiryDate')}</label>
               <input className="form-input" type="date" value={form.expiryDate} onChange={e => setForm({ ...form, expiryDate: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Batch Number</label>
-              <input className="form-input" placeholder="e.g. BATCH-001" value={form.batch} onChange={e => setForm({ ...form, batch: e.target.value })} />
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('batchNumber')}</label>
+              <input className="form-input" placeholder={t('batchPlaceholder')} value={form.batch} onChange={e => setForm({ ...form, batch: e.target.value })} />
             </div>
             <div className="col-span-2">
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Warehouse / Location</label>
-              <input className="form-input" placeholder="e.g. Main Store, Branch A" value={form.warehouse} onChange={e => setForm({ ...form, warehouse: e.target.value })} />
+              <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('warehouseLocation')}</label>
+              <input className="form-input" placeholder={t('warehousePlaceholder')} value={form.warehouse} onChange={e => setForm({ ...form, warehouse: e.target.value })} />
             </div>
           </div>
           <button onClick={handleSave} className="btn-primary w-full justify-center" disabled={saving}>
-            {saving ? 'Saving...' : editing ? 'Update Product' : 'Add Product'}
+            {saving ? t('saving') : editing ? t('updateProduct') : t('addProduct')}
           </button>
         </div>
       </Modal>

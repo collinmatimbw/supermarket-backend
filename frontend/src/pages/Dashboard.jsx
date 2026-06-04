@@ -116,7 +116,7 @@ export default function Dashboard() {
     }).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <LoadingState message="Loading dashboard..." />;
+  if (loading) return <LoadingState message={t('loadingDashboard')} />;
 
   const todaySales = sales.filter(s => s.date === today);
   const todayRevenue = todaySales.reduce((sum, s) => sum + Number(s.total || 0), 0);
@@ -234,7 +234,7 @@ export default function Dashboard() {
       {/* Data Cube — Period Slicer & Active Filters */}
       <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider mr-1">Period</span>
+          <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider mr-1">{t('period')}</span>
           {cubePeriods.map(p => (
             <button key={p.key} onClick={() => { setActivePeriod(p.key); if (p.key === 'all' && !selectedCard) setSelectedCard(null); }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activePeriod === p.key ? 'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
@@ -243,24 +243,24 @@ export default function Dashboard() {
           <span className="w-px h-6 bg-slate-700/50 mx-1 hidden sm:block" />
           <button onClick={() => { setSelectedCard(null); setActivePeriod('all'); }}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isFiltered ? 'bg-violet-500/20 text-violet-300 ring-1 ring-violet-500/40' : 'text-slate-600 cursor-default'}`}
-          >Clear Filters</button>
+          >{t('clearFilters')}</button>
         </div>
         {isFiltered && (
           <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-2 border-t border-slate-700/30">
-            <span className="text-[10px] text-slate-600 font-medium uppercase tracking-wider mr-0.5">Filters:</span>
+            <span className="text-[10px] text-slate-600 font-medium uppercase tracking-wider mr-0.5">{t('filters')}</span>
             {activePeriod !== 'all' && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-700/50 text-xs text-slate-300">
-                Period: {cubePeriods.find(p => p.key === activePeriod)?.label}
+                {t('period')}: {cubePeriods.find(p => p.key === activePeriod)?.label}
                 <button onClick={() => setActivePeriod('all')} className="text-slate-500 hover:text-slate-300">&times;</button>
               </span>
             )}
             {selectedCard && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-700/50 text-xs text-slate-300">
-                Focus: {selectedCard.charAt(0).toUpperCase() + selectedCard.slice(1)}
+                {t('focus')} {selectedCard.charAt(0).toUpperCase() + selectedCard.slice(1)}
                 <button onClick={() => setSelectedCard(null)} className="text-slate-500 hover:text-slate-300">&times;</button>
               </span>
             )}
-            <span className="text-[10px] text-slate-600 ml-auto">{filteredSales.length} sales shown</span>
+            <span className="text-[10px] text-slate-600 ml-auto">{filteredSales.length} {t('salesShown')}</span>
           </div>
         )}
       </div>

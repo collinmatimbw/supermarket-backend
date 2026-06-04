@@ -21,23 +21,23 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
   const isAdmin = currentUser === 'skyclamiere@gmail.com'; // Only this email can manage users
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/customers', label: 'Customers', icon: Users },
-    { path: '/leads', label: 'Leads', icon: Target },
-    { path: '/sales', label: 'Sales', icon: ShoppingCart },
-    { path: '/expenses', label: 'Expenses', icon: TrendingDown },
-    { path: '/employees', label: 'Employees', icon: UserCheck },
-    { path: '/capital', label: 'Capital', icon: Wallet },
-    { path: '/products', label: 'Products', icon: Package },
-    { path: '/tasks', label: 'Tasks', icon: ClipboardList },
-    { path: '/chat', label: 'SKYC AI', icon: MessageSquare },
-    { path: '/reports', label: 'Reports', icon: FileText },
-    { path: '/settings', label: 'Settings', icon: Settings },
+    { path: '/', label: t('dashboard'), icon: LayoutDashboard },
+    { path: '/customers', label: t('customers'), icon: Users },
+    { path: '/leads', label: t('leads'), icon: Target },
+    { path: '/sales', label: t('sales'), icon: ShoppingCart },
+    { path: '/expenses', label: t('expenses'), icon: TrendingDown },
+    { path: '/employees', label: t('employees'), icon: UserCheck },
+    { path: '/capital', label: t('capital'), icon: Wallet },
+    { path: '/products', label: t('products'), icon: Package },
+    { path: '/tasks', label: t('tasks'), icon: ClipboardList },
+    { path: '/chat', label: t('skycAi'), icon: MessageSquare },
+    { path: '/reports', label: t('reports'), icon: FileText },
+    { path: '/settings', label: t('settings'), icon: Settings },
   ];
 
   // Admin: add Manage Users
   if (isAdmin) {
-    navItems.push({ path: '/manage-users', label: 'Manage Users', icon: Shield });
+    navItems.push({ path: '/manage-users', label: t('manageUsers'), icon: Shield });
   }
 
   const handleSignOut = () => {
@@ -56,7 +56,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
         {!collapsed && (
           <div className="overflow-hidden">
             <p className="font-bold text-sm text-slate-100 leading-none">SKYC CRM</p>
-            <p className="text-xs text-slate-500 mt-0.5">Supermarket Suite</p>
+            <p className="text-xs text-slate-500 mt-0.5">{t('supermarketSuite')}</p>
           </div>
         )}
         <button onClick={onToggleMobile} className="lg:hidden ml-auto p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-all">
@@ -142,7 +142,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-slow" />
             <span className="text-xs text-emerald-400 font-medium">{t('systemOnline')}</span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">CRM Active</p>
+          <p className="text-xs text-slate-500 mt-1">{t('crmActive')}</p>
         </div>
       )}
 

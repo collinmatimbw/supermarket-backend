@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { LoadingState, EmptyState } from '../components/LoadingState';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../utils/api';
 
 const STAGES = [
@@ -18,6 +19,7 @@ const STAGES = [
 const emptyForm = { name: '', phone: '', email: '', notes: '', stage: 'new' };
 
 export default function Leads() {
+  const { t } = useLanguage();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -32,15 +34,15 @@ export default function Leads() {
   const openEdit = (l) => { setEditing(l); setForm({ name: l.name, phone: l.phone || '', email: l.email || '', notes: l.notes || '', stage: l.stage || 'new' }); setModalOpen(true); };
 
   const handleSave = async () => {
-    if (!form.name) return toast.error('Lead name is required');
+    if (!form.name) return toast.error(t('leadNameRequired'));
     setSaving(true);
     try {
       if (editing) {
         await api.put(`/leads/${editing.id}`, form);
-        toast.success('Lead updated');
+        toast.success(t('leadUpdated'));
       } else {
         await api.post('/leads', form);
-        toast.success('Lead added');
+        toast.success(t('leadAdded'));
       }
       setModalOpen(false);
       load();
@@ -59,20 +61,20 @@ export default function Leads() {
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete lead "${name}"?`)) return;
+    if (!window.confirm(`${t('deleteLead')} "${name}"?`)) return;
     try {
       await api.delete(`/leads/${id}`);
-      toast.success('Lead deleted');
+      toast.success(t('leadDeleted'));
       load();
     } catch (e) { toast.error(e.message); }
   };
 
-  if (loading) return <LoadingState message="Loading leads..." />;
+  if (loading) return <LoadingState message={t('loadingLeads')} />;
 
   return (
     <div className="animate-fade-in space-y-6">
-      <PageHeader title="Leads" subtitle={`${leads.length} potential customers`} action={
-        <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />New Lead</button>
+      <PageHeader title={t('leads')} subtitle={`${leads.length} ${t('potentialCustomers')}`} action={
+        <button onClick={openAdd} className="btn-primary text-sm"><Plus size={15} className="mr-1.5" />{t('newLead')}</button>
       } />
 
       {/* Pipeline */}
@@ -82,7 +84,7 @@ export default function Leads() {
           return (
             <div key={stage.key} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 min-h-[200px]">
               <div className="flex items-center justify-between mb-3">
-                <span className={`text-xs font-semibold px-2 py-1 rounded ${stage.color}`}>{stage.label}</span>
+                <span className={`text-xs font-semibold px-2 py-1 rounded ${stage.color}`}>{t(stage.key === 'new' ? 'newLead' : stage.key)}</span>
                 <span className="text-xs text-slate-500">{stageLeads.length}</span>
               </div>
               <div className="space-y-2">
@@ -109,7 +111,7 @@ export default function Leads() {
                   </div>
                 ))}
                 {stageLeads.length === 0 && (
-                  <p className="text-xs text-slate-600 text-center py-4">No leads</p>
+                  <p className="text-xs text-slate-600 text-center py-4">{t('noLeads')}</p>
                 )}
               </div>
             </div>
@@ -118,32 +120,32 @@ export default function Leads() {
       </div>
 
       {/* Modal */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Lead' : 'New Lead'}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? t('editLead') : t('newLead')}>
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">Name *</label>
-            <input className="form-input" placeholder="Lead name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('name')} *</label>
+            <input className="form-input" placeholder={t('leadName')} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">Phone</label>
-            <input className="form-input" placeholder="Phone number" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('phone')}</label>
+            <input className="form-input" placeholder={t('phonePlaceholder')} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">Email</label>
-            <input className="form-input" placeholder="Email address" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('email')}</label>
+            <input className="form-input" placeholder={t('emailPlaceholder')} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">Stage</label>
+            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('stage')}</label>
             <select className="form-input" value={form.stage} onChange={e => setForm({ ...form, stage: e.target.value })}>
-              {STAGES.slice(0, 4).map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+              {STAGES.slice(0, 4).map(s => <option key={s.key} value={s.key}>{t(s.key === 'new' ? 'newLead' : s.key)}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">Notes</label>
-            <textarea className="form-input" rows={3} placeholder="Notes..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('notes')}</label>
+            <textarea className="form-input" rows={3} placeholder={t('notesPlaceholder')} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
           </div>
           <button onClick={handleSave} className="btn-primary w-full justify-center" disabled={saving}>
-            {saving ? 'Saving...' : editing ? 'Update Lead' : 'Add Lead'}
+            {saving ? t('saving') : editing ? t('updateLead') : t('addLead')}
           </button>
         </div>
       </Modal>
