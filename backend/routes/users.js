@@ -5,16 +5,9 @@ const Product = require('../models/Product');
 const Sale = require('../models/Sale');
 const Customer = require('../models/Customer');
 const Supplier = require('../models/Supplier');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, requireRole } = require('../middleware/auth');
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || '';
-
-const requireAdmin = (req, res, next) => {
-  if (!req.user || req.user.email !== ADMIN_EMAIL) return res.status(403).json({ success: false, message: 'Admin access required' });
-  next();
-};
-
-router.get('/', authMiddleware, requireAdmin, async (req, res) => {
+router.get('/', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const users = await User.find().select('-password');
     const usersWithCounts = await Promise.all(users.map(async (user) => {
@@ -22,7 +15,7 @@ router.get('/', authMiddleware, requireAdmin, async (req, res) => {
       const saleCount = await Sale.countDocuments({ userId: user.email });
       const customerCount = await Customer.countDocuments({ userId: user.email });
       const supplierCount = await Supplier.countDocuments({ userId: user.email });
-      return { email: user.email, createdAt: user.createdAt, products: productCount, sales: saleCount, customers: customerCount, suppliers: supplierCount };
+      return { email: user.email, role: user.role, createdAt: user.createdAt, products: productCount, sales: saleCount, customers: customerCount, suppliers: supplierCount };
     }));
     res.json({ success: true, data: usersWithCounts });
   } catch (err) {
@@ -30,7 +23,22 @@ router.get('/', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-router.delete('/:email', authMiddleware, requireAdmin, async (req, res) => {
+router.put('/:email/role', authMiddleware, requireRole('admin'), async (req, res) => {
+  try {
+    const { email } = req.params;
+    const { role } = req.body;
+    if (!['admin', 'manager', 'user'].includes(role)) return res.status(400).json({ success: false, message: 'Invalid role' });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    user.role = role;
+    await user.save();
+    res.json({ success: true, data: { email: user.email, role: user.role } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.delete('/:email', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { email } = req.params;
     if (email === req.user.email) return res.status(400).json({ success: false, message: 'Cannot delete your own account' });

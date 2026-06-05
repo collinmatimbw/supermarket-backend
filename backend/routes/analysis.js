@@ -349,6 +349,7 @@ router.post('/query', async (req, res) => {
       case 'customer_insights': result = await customerInsights(userId, period); break;
       case 'capital_analysis': result = await capitalAnalysis(userId); break;
       case 'prediction': result = await prediction(userId); break;
+      case 'health_score': result = await healthScore(userId); break;
       default: return res.status(400).json({ error: `Unknown query type: ${type}` });
     }
     res.json(result);
@@ -356,5 +357,84 @@ router.post('/query', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+async function healthScore(userId) {
+  const now = new Date();
+  const monthAgo = new Date(now); monthAgo.setMonth(monthAgo.getMonth() - 1);
+  const twoMonthsAgo = new Date(now); twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+  const monthStr = monthAgo.toISOString().split('T')[0];
+  const twoMonthStr = twoMonthsAgo.toISOString().split('T')[0];
+
+  const [currentSales, prevSales, products, expenses] = await Promise.all([
+    Sale.find({ userId, date: { $gte: monthStr } }),
+    Sale.find({ userId, date: { $gte: twoMonthStr, $lt: monthStr } }),
+    Product.find({ userId }),
+    Expense.find({ userId, visible: 'true', date: { $gte: monthStr } }),
+  ]);
+
+  const currRevenue = currentSales.reduce((s, sl) => s + Number(sl.total || 0), 0);
+  const currProfit = currentSales.reduce((s, sl) => s + Number(sl.profit || 0), 0);
+  const prevRevenue = prevSales.reduce((s, sl) => s + Number(sl.total || 0), 0);
+  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const totalDebt = currentSales.reduce((s, sl) => s + Number(sl.balance || 0), 0);
+  const deadStock = products.filter(p => { const d = new Date(p.dateAdded); return (now - d) > 60 * 86400000 && p.quantity > 0; }).length;
+  const totalProducts = products.length;
+  const activeCustomers = new Set(currentSales.filter(s => s.customerName && s.customerName !== 'Walk-in').map(s => s.customerName)).size;
+  const allCustomers = new Set(prevSales.filter(s => s.customerName && s.customerName !== 'Walk-in').map(s => s.customerName)).size;
+
+  let score = 0;
+  const strengths = [];
+  const risks = [];
+  const recommendations = [];
+
+  const revenueGrowth = prevRevenue > 0 ? ((currRevenue - prevRevenue) / prevRevenue) * 100 : 0;
+  if (revenueGrowth > 10) { score += 25; strengths.push('Revenue growing strongly'); }
+  else if (revenueGrowth > 0) { score += 18; strengths.push('Revenue stable'); }
+  else { score += 5; risks.push('Revenue declining'); recommendations.push('Review pricing and promotions'); }
+
+  const grossMargin = currRevenue > 0 ? (currProfit / currRevenue) * 100 : 0;
+  if (grossMargin > 30) { score += 20; strengths.push('Healthy profit margins'); }
+  else if (grossMargin > 15) { score += 14; }
+  else { score += 5; risks.push('Low profit margins'); recommendations.push('Review supplier costs and pricing'); }
+
+  const cashFlowRatio = currRevenue > 0 ? (currRevenue - totalExpenses) / currRevenue : 0;
+  if (cashFlowRatio > 0.2) { score += 15; strengths.push('Positive cash flow'); }
+  else if (cashFlowRatio > 0) { score += 10; }
+  else { score += 3; risks.push('Negative cash flow'); recommendations.push('Reduce expenses or increase sales'); }
+
+  const debtRatio = currRevenue > 0 ? totalDebt / currRevenue : 0;
+  if (debtRatio < 0.1) { score += 15; strengths.push('Low debt levels'); }
+  else if (debtRatio < 0.3) { score += 10; }
+  else { score += 3; risks.push('High debt ratio'); recommendations.push('Intensify debt collection efforts'); }
+
+  const deadStockRatio = totalProducts > 0 ? deadStock / totalProducts : 0;
+  if (deadStockRatio < 0.05) { score += 15; strengths.push('Efficient inventory turnover'); }
+  else if (deadStockRatio < 0.15) { score += 10; }
+  else { score += 3; risks.push('High dead stock'); recommendations.push('Run promotions on slow-moving items'); }
+
+  const customerGrowth = allCustomers > 0 ? activeCustomers / allCustomers : 1;
+  if (customerGrowth > 1.2) { score += 10; strengths.push('Growing customer base'); }
+  else if (customerGrowth > 0.8) { score += 6; }
+  else { score += 2; risks.push('Customer base shrinking'); recommendations.push('Launch customer retention programs'); }
+
+  const grade = score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : score >= 40 ? 'Fair' : 'Critical';
+
+  return {
+    success: true, data: {
+      score, grade, maxScore: 100,
+      strengths: strengths.slice(0, 3),
+      risks: risks.slice(0, 3),
+      recommendations: recommendations.slice(0, 3),
+      metrics: {
+        revenueGrowth: Math.round(revenueGrowth * 100) / 100,
+        grossMargin: Math.round(grossMargin * 100) / 100,
+        cashFlowRatio: Math.round(cashFlowRatio * 100) / 100,
+        debtRatio: Math.round(debtRatio * 100) / 100,
+        deadStockRatio: Math.round(deadStockRatio * 100) / 100,
+        customerGrowth: Math.round(customerGrowth * 100) / 100,
+      }
+    }
+  };
+}
 
 module.exports = router;

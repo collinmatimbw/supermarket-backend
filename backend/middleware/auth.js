@@ -10,11 +10,20 @@ function authMiddleware(req, res, next) {
   try {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = { email: decoded.email };
+    req.user = { email: decoded.email, role: decoded.role || 'user' };
     next();
   } catch (err) {
     return res.status(401).json({ success: false, message: 'Invalid or expired token' });
   }
 }
 
-module.exports = { authMiddleware, JWT_SECRET };
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+    }
+    next();
+  };
+}
+
+module.exports = { authMiddleware, requireRole, JWT_SECRET };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Clock, Users, Target, Package, Phone, MessageCircle, Plus, TrendingDown, CreditCard, Wallet, BarChart3, FileText, X, Calendar, PiggyBank, Bell, CheckCheck } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Clock, Users, Target, Package, Phone, MessageCircle, Plus, TrendingDown, CreditCard, Wallet, BarChart3, FileText, X, Calendar, PiggyBank, Bell, CheckCheck, HeartPulse } from 'lucide-react';
 import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import StatCard from '../components/StatCard';
@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [localNotifs, setLocalNotifs] = useState([]);
   const [activePeriod, setActivePeriod] = useState('all'); // today | week | month | all
   const [selectedCard, setSelectedCard] = useState(null);
+  const [health, setHealth] = useState(null);
   const auth = JSON.parse(localStorage.getItem('skyc_auth') || '{}');
   const currentUser = auth.email;
   const isAdmin = auth.isAdmin;
@@ -102,7 +103,8 @@ export default function Dashboard() {
       api.get('/expenses'),
       api.get('/capital'),
       isAdmin ? api.get('/notifications').catch(() => ({ data: { data: [] } })) : Promise.resolve({ data: { data: [] } }),
-    ]).then(([p, s, l, t, a, e, c, n]) => {
+      api.post('/analysis/query', { type: 'health_score' }).catch(() => ({ data: { data: { score: 0, grade: '—', strengths: [], risks: [], recommendations: [] } } })),
+    ]).then(([p, s, l, t, a, e, c, n, h]) => {
       setProducts(p.data.data);
       setSales(s.data.data);
       setLeads(l.data.data || []);
@@ -113,6 +115,7 @@ export default function Dashboard() {
       setExpensesToday(exps.filter(ex => ex.date === today).reduce((s, ex) => s + Number(ex.amount || 0), 0));
       setCapitalRecords(c.data.data || []);
       setNotifications(n.data.data || []);
+      setHealth(h.data.data);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -335,6 +338,44 @@ export default function Dashboard() {
           {selectedCard === 'capital' && <span className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Active</span>}
         </button>
       </div>
+
+      {/* Business Health Card */}
+      {health && (
+        <div className="glass rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <HeartPulse size={16} style={{ color: health.score >= 60 ? 'var(--green)' : 'var(--red)' }} />
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('businessHealth')}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold" style={{ color: health.score >= 60 ? 'var(--green)' : 'var(--red)' }}>{health.score}</span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>/ 100</span>
+            </div>
+          </div>
+          <div className="w-full h-2 rounded-full mb-3" style={{ background: 'rgba(100,116,139,0.15)' }}>
+            <div className="h-full rounded-full transition-all duration-500" style={{
+              width: `${health.score}%`,
+              background: health.score >= 80 ? 'var(--green)' : health.score >= 60 ? '#60a5fa' : health.score >= 40 ? '#fbbf24' : 'var(--red)'
+            }} />
+          </div>
+          <div className="flex flex-wrap gap-3 text-xs">
+            {health.grade && <span className="px-2 py-1 rounded-lg font-medium" style={{
+              background: health.score >= 60 ? 'var(--green-bg)' : 'var(--red-bg)',
+              color: health.score >= 60 ? 'var(--green)' : 'var(--red)'
+            }}>{health.grade}</span>}
+            {health.strengths?.map((s, i) => (
+              <span key={i} className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: 'var(--green-bg)', color: 'var(--green)' }}>
+                &#10003; {s}
+              </span>
+            ))}
+            {health.risks?.map((r, i) => (
+              <span key={i} className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: 'var(--red-bg)', color: 'var(--red)' }}>
+                &#9888; {r}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Charts + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

@@ -22,6 +22,10 @@ import Expenses from './pages/Expenses';
 import Savings from './pages/Savings';
 import Employees from './pages/Employees';
 import Capital from './pages/Capital';
+import Suppliers from './pages/Suppliers';
+import PurchaseOrders from './pages/PurchaseOrders';
+import CashFlow from './pages/CashFlow';
+import InventoryHistory from './pages/InventoryHistory';
 import Chat from './pages/Chat';
 import Settings from './pages/Settings';
 import ManageUsers from './pages/ManageUsers';
@@ -124,6 +128,10 @@ export default function App() {
             <Route path="/savings" element={<ProtectedRoute><Layout><Savings /></Layout></ProtectedRoute>} />
             <Route path="/employees" element={<ProtectedRoute><Layout><Employees /></Layout></ProtectedRoute>} />
             <Route path="/capital" element={<ProtectedRoute><Layout><Capital /></Layout></ProtectedRoute>} />
+            <Route path="/suppliers" element={<ProtectedRoute><Layout><Suppliers /></Layout></ProtectedRoute>} />
+            <Route path="/purchase-orders" element={<ProtectedRoute><Layout><PurchaseOrders /></Layout></ProtectedRoute>} />
+            <Route path="/cash-flow" element={<ProtectedRoute><Layout><CashFlow /></Layout></ProtectedRoute>} />
+            <Route path="/inventory-history" element={<ProtectedRoute><Layout><InventoryHistory /></Layout></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><Layout><Chat /></Layout></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
             <Route path="/manage-users" element={<ProtectedRoute><Layout><ManageUsers /></Layout></ProtectedRoute>} />

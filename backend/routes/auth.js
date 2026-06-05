@@ -19,9 +19,8 @@ router.post('/login', async (req, res) => {
       await user.save();
     }
 
-    const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    const isAdmin = user.email === (process.env.ADMIN_EMAIL || '');
-    res.json({ success: true, data: { token, email: user.email, isAdmin } });
+    const token = jwt.sign({ email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ success: true, data: { token, email: user.email, role: user.role, isAdmin: user.role === 'admin' } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -34,11 +33,11 @@ router.post('/signup', async (req, res) => {
     const normalizedEmail = email.toLowerCase().trim();
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) return res.status(400).json({ success: false, message: 'Email already registered' });
-    const user = new User({ email: normalizedEmail, password });
+    const role = normalizedEmail === (process.env.ADMIN_EMAIL || '').toLowerCase() ? 'admin' : 'user';
+    const user = new User({ email: normalizedEmail, password, role });
     await user.save();
-    const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    const isAdmin = user.email === (process.env.ADMIN_EMAIL || '');
-    res.status(201).json({ success: true, data: { token, email: user.email, isAdmin } });
+    const token = jwt.sign({ email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.status(201).json({ success: true, data: { token, email: user.email, role: user.role, isAdmin: user.role === 'admin' } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
