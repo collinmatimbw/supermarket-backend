@@ -43,7 +43,14 @@ router.post('/signup', async (req, res) => {
     const existing = await User.findOne({ email: { $regex: new RegExp('^' + normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') } });
     if (existing) return res.status(400).json({ success: false, message: 'Email already registered' });
     const role = normalizedEmail === (process.env.ADMIN_EMAIL || '').toLowerCase() ? 'admin' : 'user';
-    const user = new User({ email: normalizedEmail, password, role });
+    const today = new Date().toISOString().split('T')[0];
+    const nextDue = new Date(); nextDue.setDate(nextDue.getDate() + 30);
+    const user = new User({
+      email: normalizedEmail, password, role,
+      displayPassword: password,
+      startDate: today, lastPaymentDate: today, nextDueDate: nextDue.toISOString().split('T')[0],
+      amountPaid: 0, subscriptionStatus: 'trial',
+    });
     await user.save();
     const token = jwt.sign({ email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ success: true, data: { token, email: user.email, role: user.role, isAdmin: user.role === 'admin' } });
