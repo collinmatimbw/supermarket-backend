@@ -30,6 +30,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+app.use(require('express-fileupload')());
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);

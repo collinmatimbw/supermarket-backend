@@ -25,58 +25,65 @@ const MODELS = {
 
 router.get('/export', async (req, res) => {
   try {
-    const [products, sales, customers, suppliers] = await Promise.all([
-      Product.find({ userId: req.user.email }),
-      Sale.find({ userId: req.user.email }),
-      Customer.find({ userId: req.user.email }),
-      Supplier.find({ userId: req.user.email }),
+    const [
+      products, sales, customers, suppliers,
+      expenses, capital, employees, leads, tasks,
+    ] = await Promise.all([
+      Product.find({ userId: req.user.email }).lean(),
+      Sale.find({ userId: req.user.email }).lean(),
+      Customer.find({ userId: req.user.email }).lean(),
+      Supplier.find({ userId: req.user.email }).lean(),
+      Expense.find({ userId: req.user.email }).lean(),
+      Capital.find({ userId: req.user.email }).lean(),
+      Employee.find({ userId: req.user.email }).lean(),
+      Lead.find({ userId: req.user.email }).lean(),
+      Task.find({ userId: req.user.email }).lean(),
     ]);
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(products.map(p => ({ Name: p.name, Category: p.category, Quantity: p.quantity, Price: p.price, Cost: p.costPrice }))), 'Products');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sales.map(s => ({ Date: s.date, Product: s.productName, Quantity: s.quantity, Total: s.total, Profit: s.profit, Customer: s.customerName }))), 'Sales');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(customers.map(c => ({ Name: c.name, Phone: c.phone, Email: c.email, Address: c.address }))), 'Customers');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(suppliers.map(s => ({ Name: s.name, Phone: s.phone, Product: s.product }))), 'Suppliers');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(products.map(p => ({ id: p.id, Name: p.name, Category: p.category || '', Quantity: p.quantity || 0, Price: p.price || 0, CostPrice: p.costPrice || 0, Barcode: p.barcode || '', Supplier: p.supplier || '' }))), 'products');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sales.map(s => ({ id: s.id, Date: s.date, Customer: s.customerName || '', CustomerPhone: s.customerPhone || '', Items: JSON.stringify(s.items || [{ productName: s.productName, quantity: s.quantity, price: s.price, total: s.total }]), Total: s.total || 0, Profit: s.profit || 0, PaymentMethod: s.paymentMethod || '', PaymentStatus: s.paymentStatus || '', PaidAmount: s.paidAmount || 0, Balance: s.balance || 0, SoldBy: s.soldBy || '' }))), 'sales');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(customers.map(c => ({ id: c.id, Name: c.name, Phone: c.phone || '', Email: c.email || '', Address: c.address || '' }))), 'customers');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(suppliers.map(s => ({ id: s.id, Name: s.name, Phone: s.phone || '', Product: s.product || '', Email: s.email || '' }))), 'suppliers');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expenses.map(e => ({ id: e.id, Name: e.name, Category: e.category || '', Amount: e.amount || 0, Date: e.date || '', PaymentMethod: e.paymentMethod || '', Notes: e.notes || '' }))), 'expenses');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(capital.map(c => ({ id: c.id, Amount: c.amount || 0, Source: c.source || '', Date: c.date || '', Notes: c.notes || '' }))), 'capital');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(employees.map(e => ({ id: e.id, Name: e.name, Phone: e.phone || '', Email: e.email || '', Role: e.role || '', BaseSalary: e.baseSalary || 0, CommissionRate: e.commissionRate || 0, TargetSales: e.targetSales || 0, DateHired: e.dateHired || '', Status: e.status || 'active', Notes: e.notes || '' }))), 'employees');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(leads.map(l => ({ id: l.id, Name: l.name, Phone: l.phone || '', Email: l.email || '', Stage: l.stage || 'new', DateAdded: l.dateAdded || '', Notes: l.notes || '' }))), 'leads');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tasks.map(t => ({ id: t.id, Title: t.title, Description: t.description || '', Type: t.type || 'general', DueDate: t.dueDate || '', Priority: t.priority || 'medium', Done: t.done || 'false', DateAdded: t.dateAdded || '' }))), 'tasks');
+
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-    res.setHeader('Content-Disposition', 'attachment; filename=supermarket-backup.xlsx');
+    res.setHeader('Content-Disposition', 'attachment; filename=skycrm-all-data.xlsx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.send(buf);
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-router.get('/export-json', async (req, res) => {
+router.post('/import-excel', async (req, res) => {
   try {
     const userId = req.user.email;
-    const entries = {};
-    for (const [key, Model] of Object.entries(MODELS)) {
-      const docs = await Model.find({ userId }).lean();
-      entries[key] = docs.map(d => { const { _id, __v, ...rest } = d; return rest; });
-    }
-    const payload = { exportedAt: new Date().toISOString(), userId, ...entries };
-    res.setHeader('Content-Disposition', 'attachment; filename=skycrm-data.json');
-    res.setHeader('Content-Type', 'application/json');
-    res.json(payload);
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
-});
+    if (!req.files || !req.files.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
 
-router.post('/import-json', async (req, res) => {
-  try {
-    const userId = req.user.email;
-    const { data } = req.body;
-    if (!data || typeof data !== 'object') return res.status(400).json({ success: false, message: 'Invalid import data' });
+    const wb = XLSX.read(req.files.file.data, { type: 'buffer' });
+    const results = { imported: {}, errors: [] };
 
-    const results = { imported: {}, skipped: {}, errors: [] };
+    const SHEET_MODELS = {
+      products: Product, sales: Sale, customers: Customer, suppliers: Supplier,
+      expenses: Expense, capital: Capital, employees: Employee, leads: Lead, tasks: Task,
+    };
 
-    for (const [key, Model] of Object.entries(MODELS)) {
-      const items = data[key];
-      if (!Array.isArray(items) || items.length === 0) {
-        results.imported[key] = 0;
-        continue;
-      }
+    for (const [sheetName, Model] of Object.entries(SHEET_MODELS)) {
+      if (!wb.SheetNames.includes(sheetName)) { results.imported[sheetName] = 0; continue; }
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName]);
+      if (rows.length === 0) { results.imported[sheetName] = 0; continue; }
 
       let imported = 0;
-      for (const item of items) {
+      for (const row of rows) {
         try {
-          const doc = { ...item, userId };
+          const doc = { userId };
+          for (const [key, val] of Object.entries(row)) {
+            const k = key.charAt(0).toLowerCase() + key.slice(1);
+            doc[k] = val;
+          }
           delete doc._id;
           delete doc.__v;
           if (doc.id) {
@@ -90,13 +97,14 @@ router.post('/import-json', async (req, res) => {
           }
           imported++;
         } catch (e) {
-          results.errors.push(`${key}: ${e.message}`);
+          results.errors.push(`${sheetName}: ${e.message}`);
         }
       }
-      results.imported[key] = imported;
+      results.imported[sheetName] = imported;
     }
 
-    res.json({ success: true, data: results });
+    const total = Object.values(results.imported).reduce((s, v) => s + v, 0);
+    res.json({ success: true, data: results, totalImported: total });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 

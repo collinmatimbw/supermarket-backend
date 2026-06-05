@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Download, Upload, Trash2, Info, Database, Activity, Server, RefreshCw } from 'lucide-react';
+import { Download, Upload, Trash2, Info, Database, Server, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PageHeader from '../components/PageHeader';
 import { LoadingState } from '../components/LoadingState';
@@ -33,36 +33,20 @@ export default function Settings() {
     }
   };
 
-  const handleExportJSON = async () => {
-    try {
-      const response = await api.get('/settings/export-json');
-      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'skycrm-data.json';
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success('Downloading JSON data...');
-    } catch (e) {
-      toast.error(e.message);
-    }
-  };
-
-  const handleImportJSON = async (e) => {
+  const handleImportExcel = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setImporting(true);
     try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      const res = await api.post('/settings/import-json', { data });
-      const results = res.data.data;
-      const total = Object.values(results.imported).reduce((s, v) => s + v, 0);
-      toast.success(`Imported ${total} records`);
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/settings/import-excel', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      toast.success(`Imported ${res.data.totalImported || 0} records`);
       loadInfo();
     } catch (e) {
-      toast.error('Import failed: ' + e.message);
+      toast.error('Import failed: ' + (e.response?.data?.message || e.message));
     }
     setImporting(false);
     e.target.value = '';
@@ -124,8 +108,8 @@ export default function Settings() {
           <div className="flex items-center justify-between p-4 rounded-xl"
             style={{ background: 'rgba(110,231,183,0.04)', border: '1px solid rgba(110,231,183,0.1)' }}>
             <div>
-              <p className="text-sm font-semibold text-slate-200">Export Excel Backup</p>
-              <p className="text-xs text-slate-500 mt-0.5">Download all data as a single .xlsx workbook</p>
+              <p className="text-sm font-semibold text-slate-200">Export All Data (Excel)</p>
+              <p className="text-xs text-slate-500 mt-0.5">Download all data as .xlsx — edit offline, then re-import</p>
             </div>
             <button className="btn-primary" onClick={handleExport}>
               <Download size={14} /> Export
@@ -135,24 +119,13 @@ export default function Settings() {
           <div className="flex items-center justify-between p-4 rounded-xl"
             style={{ background: 'rgba(110,231,183,0.04)', border: '1px solid rgba(110,231,183,0.1)' }}>
             <div>
-              <p className="text-sm font-semibold text-slate-200">Export JSON (All Data)</p>
-              <p className="text-xs text-slate-500 mt-0.5">Download all data as JSON — edit offline, then re-import</p>
-            </div>
-            <button className="btn-primary" onClick={handleExportJSON}>
-              <Download size={14} /> Export JSON
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-xl"
-            style={{ background: 'rgba(110,231,183,0.04)', border: '1px solid rgba(110,231,183,0.1)' }}>
-            <div>
-              <p className="text-sm font-semibold text-slate-200">Import JSON</p>
-              <p className="text-xs text-slate-500 mt-0.5">Upload a JSON file to bulk-import/update all data</p>
+              <p className="text-sm font-semibold text-slate-200">Import Excel</p>
+              <p className="text-xs text-slate-500 mt-0.5">Upload a .xlsx file to bulk-import/update all data</p>
             </div>
             <button className="btn-primary" onClick={() => fileRef.current?.click()} disabled={importing}>
-              <Upload size={14} /> {importing ? 'Importing...' : 'Import JSON'}
+              <Upload size={14} /> {importing ? 'Importing...' : 'Import Excel'}
             </button>
-            <input ref={fileRef} type="file" accept=".json" onChange={handleImportJSON} className="hidden" />
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleImportExcel} className="hidden" />
           </div>
 
           <div className="flex items-center justify-between p-4 rounded-xl"
