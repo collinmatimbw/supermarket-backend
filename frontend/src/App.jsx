@@ -7,6 +7,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Sidebar from './components/Sidebar';
 import OfflineBanner from './components/OfflineBanner';
+import SyncBanner from './components/SyncBanner';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
@@ -56,6 +57,7 @@ function Layout({ children }) {
   return (
     <div className="flex min-h-screen">
       <OfflineBanner />
+      <SyncBanner />
       <Sidebar mobileOpen={mobileSidebar} onToggleMobile={() => setMobileSidebar(!mobileSidebar)} />
       <main className="flex-1 overflow-auto relative z-10">
         <div className="fixed top-0 left-0 right-0 h-px z-20"

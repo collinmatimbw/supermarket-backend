@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, ShoppingCart, Trash2, Filter, Download, MessageCircle, Phone, DollarSign, X } from 'lucide-react';
+import { Plus, Search, ShoppingCart, Trash2, Filter, Download, MessageCircle, Phone, DollarSign, X, Cloud } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { LoadingState, EmptyState } from '../components/LoadingState';
 import api from '../utils/api';
 import { formatCurrency, formatDate, exportToCSV, sendWhatsApp, formatReceipt, formatDebtReminder } from '../utils/helpers';
+import { enqueueSale, getPendingSales } from '../utils/offlineQueue';
 
 const emptyCartItem = { productId: '', productName: '', quantity: 1, price: 0, total: 0, profit: 0 };
 
@@ -36,8 +37,11 @@ export default function Sales() {
       api.get('/products'),
       api.get('/customers'),
       api.get('/employees'),
-    ]).then(([s, p, c, e]) => {
-      setSales(s.data.data);
+      getPendingSales(),
+    ]).then(([s, p, c, e, pending]) => {
+      const serverSales = s.data.data || [];
+      const allSales = [...pending.filter(ps => ps._pending), ...serverSales];
+      setSales(allSales);
       setProducts(p.data.data);
       setCustomers(c.data.data);
       setEmployees(e.data.data || []);
@@ -109,15 +113,25 @@ export default function Sales() {
   const handleSave = async () => {
     if (cart.length === 0) return toast.error('Add at least one product');
     if (hasOverstock) return toast.error('Some products exceed available stock');
+
+    const payload = {
+      items: cart,
+      customerName, customerPhone,
+      paymentMethod,
+      paidAmount: paymentMethod === 'credit' ? Number(paidAmount) : cartTotal,
+      soldBy,
+    };
+
+    if (!navigator.onLine) {
+      const localSale = await enqueueSale(payload);
+      toast.success('Sale saved offline — will sync when connected');
+      setModalOpen(false);
+      setSales(prev => [localSale, ...prev]);
+      return;
+    }
+
     setSaving(true);
     try {
-      const payload = {
-        items: cart,
-        customerName, customerPhone,
-        paymentMethod,
-        paidAmount: paymentMethod === 'credit' ? Number(paidAmount) : cartTotal,
-        soldBy,
-      };
       const { data } = await api.post('/sales', payload);
       if (sendReceipt && data.data) {
         sendWhatsApp(customerPhone, formatReceipt(data.data));
@@ -226,9 +240,12 @@ export default function Sales() {
                   <tr key={sale.id} className="border-b border-slate-700/50 hover:bg-white/5">
                     <td className="py-3 px-4 text-slate-400 text-xs">{sale.date}</td>
                     <td className="py-3 px-4 text-white font-medium">
-                      {sale.items && sale.items.length > 1
-                        ? <span>{sale.items.length} items</span>
-                        : sale.productName}
+                      <div className="flex items-center gap-2">
+                        {sale.items && sale.items.length > 1
+                          ? <span>{sale.items.length} items</span>
+                          : sale.productName}
+                        {sale._pending && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium flex items-center gap-1"><Cloud size={10} />Pending</span>}
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-center text-slate-300">{sale.quantity}</td>
                     <td className="py-3 px-4 text-right text-emerald-400 font-medium">{formatCurrency(sale.total)}</td>
