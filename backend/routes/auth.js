@@ -8,18 +8,21 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password required' });
   try {
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const inputEmail = email.trim();
+    const user = await User.findOne({ email: { $regex: new RegExp('^' + inputEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') } });
     if (!user) return res.status(401).json({ success: false, message: 'Invalid email or password' });
 
     const match = await user.comparePassword(password);
     if (!match) return res.status(401).json({ success: false, message: 'Invalid email or password' });
 
+    const normalizedEmail = user.email.toLowerCase();
+    if (user.email !== normalizedEmail) user.email = normalizedEmail;
+
     if (!user.password.startsWith('$2')) {
       user.password = password;
     }
 
-    const isAdminEmail = user.email === (process.env.ADMIN_EMAIL || '').toLowerCase();
-    if (isAdminEmail && user.role !== 'admin') {
+    if (normalizedEmail === (process.env.ADMIN_EMAIL || '').toLowerCase() && user.role !== 'admin') {
       user.role = 'admin';
     }
 
@@ -37,7 +40,7 @@ router.post('/signup', async (req, res) => {
   if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password required' });
   try {
     const normalizedEmail = email.toLowerCase().trim();
-    const existing = await User.findOne({ email: normalizedEmail });
+    const existing = await User.findOne({ email: { $regex: new RegExp('^' + normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') } });
     if (existing) return res.status(400).json({ success: false, message: 'Email already registered' });
     const role = normalizedEmail === (process.env.ADMIN_EMAIL || '').toLowerCase() ? 'admin' : 'user';
     const user = new User({ email: normalizedEmail, password, role });
