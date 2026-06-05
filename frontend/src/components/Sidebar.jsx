@@ -20,7 +20,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
   const currentUser = auth.email;
   const isAdmin = auth.isAdmin;
 
-  const navItems = [
+  const userNavItems = [
     { path: '/', label: t('dashboard'), icon: LayoutDashboard },
     { path: '/customers', label: t('customers'), icon: Users },
     { path: '/leads', label: t('leads'), icon: Target },
@@ -40,10 +40,13 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
     { path: '/settings', label: t('settings'), icon: Settings },
   ];
 
-  // Admin: add Manage Users
-  if (isAdmin) {
-    navItems.push({ path: '/manage-users', label: t('manageUsers'), icon: Shield });
-  }
+  const adminNavItems = [
+    { path: '/', label: t('dashboard'), icon: LayoutDashboard },
+    { path: '/manage-users', label: t('manageUsers'), icon: Shield },
+    { path: '/settings', label: t('settings'), icon: Settings },
+  ];
+
+  const navItems = isAdmin ? adminNavItems : userNavItems;
 
   const handleSignOut = () => {
     localStorage.removeItem('skyc_auth');
