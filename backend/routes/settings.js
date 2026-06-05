@@ -5,6 +5,23 @@ const Product = require('../models/Product');
 const Sale = require('../models/Sale');
 const Customer = require('../models/Customer');
 const Supplier = require('../models/Supplier');
+const Expense = require('../models/Expense');
+const Capital = require('../models/Capital');
+const Employee = require('../models/Employee');
+const Lead = require('../models/Lead');
+const Task = require('../models/Task');
+
+const MODELS = {
+  products: Product,
+  sales: Sale,
+  customers: Customer,
+  suppliers: Supplier,
+  expenses: Expense,
+  capital: Capital,
+  employees: Employee,
+  leads: Lead,
+  tasks: Task,
+};
 
 router.get('/export', async (req, res) => {
   try {
@@ -23,6 +40,63 @@ router.get('/export', async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename=supermarket-backup.xlsx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.send(buf);
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+router.get('/export-json', async (req, res) => {
+  try {
+    const userId = req.user.email;
+    const entries = {};
+    for (const [key, Model] of Object.entries(MODELS)) {
+      const docs = await Model.find({ userId }).lean();
+      entries[key] = docs.map(d => { const { _id, __v, ...rest } = d; return rest; });
+    }
+    const payload = { exportedAt: new Date().toISOString(), userId, ...entries };
+    res.setHeader('Content-Disposition', 'attachment; filename=skycrm-data.json');
+    res.setHeader('Content-Type', 'application/json');
+    res.json(payload);
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+router.post('/import-json', async (req, res) => {
+  try {
+    const userId = req.user.email;
+    const { data } = req.body;
+    if (!data || typeof data !== 'object') return res.status(400).json({ success: false, message: 'Invalid import data' });
+
+    const results = { imported: {}, skipped: {}, errors: [] };
+
+    for (const [key, Model] of Object.entries(MODELS)) {
+      const items = data[key];
+      if (!Array.isArray(items) || items.length === 0) {
+        results.imported[key] = 0;
+        continue;
+      }
+
+      let imported = 0;
+      for (const item of items) {
+        try {
+          const doc = { ...item, userId };
+          delete doc._id;
+          delete doc.__v;
+          if (doc.id) {
+            await Model.findOneAndUpdate(
+              { userId, id: doc.id },
+              { $set: doc },
+              { upsert: true, new: true }
+            );
+          } else {
+            await new Model(doc).save();
+          }
+          imported++;
+        } catch (e) {
+          results.errors.push(`${key}: ${e.message}`);
+        }
+      }
+      results.imported[key] = imported;
+    }
+
+    res.json({ success: true, data: results });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 

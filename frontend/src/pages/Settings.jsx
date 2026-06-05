@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Download, Trash2, Info, Database, Activity, Server, RefreshCw } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Download, Upload, Trash2, Info, Database, Activity, Server, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PageHeader from '../components/PageHeader';
 import { LoadingState } from '../components/LoadingState';
@@ -9,6 +9,8 @@ export default function Settings() {
   const [sysInfo, setSysInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef(null);
 
   const loadInfo = () => {
     api.get('/settings/info').then(r => setSysInfo(r.data.data)).finally(() => setLoading(false));
@@ -29,6 +31,41 @@ export default function Settings() {
     } catch (e) {
       toast.error(e.message);
     }
+  };
+
+  const handleExportJSON = async () => {
+    try {
+      const response = await api.get('/settings/export-json');
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'skycrm-data.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Downloading JSON data...');
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
+  const handleImportJSON = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const res = await api.post('/settings/import-json', { data });
+      const results = res.data.data;
+      const total = Object.values(results.imported).reduce((s, v) => s + v, 0);
+      toast.success(`Imported ${total} records`);
+      loadInfo();
+    } catch (e) {
+      toast.error('Import failed: ' + e.message);
+    }
+    setImporting(false);
+    e.target.value = '';
   };
 
   const handleClearSales = async () => {
@@ -93,6 +130,29 @@ export default function Settings() {
             <button className="btn-primary" onClick={handleExport}>
               <Download size={14} /> Export
             </button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-xl"
+            style={{ background: 'rgba(110,231,183,0.04)', border: '1px solid rgba(110,231,183,0.1)' }}>
+            <div>
+              <p className="text-sm font-semibold text-slate-200">Export JSON (All Data)</p>
+              <p className="text-xs text-slate-500 mt-0.5">Download all data as JSON — edit offline, then re-import</p>
+            </div>
+            <button className="btn-primary" onClick={handleExportJSON}>
+              <Download size={14} /> Export JSON
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-xl"
+            style={{ background: 'rgba(110,231,183,0.04)', border: '1px solid rgba(110,231,183,0.1)' }}>
+            <div>
+              <p className="text-sm font-semibold text-slate-200">Import JSON</p>
+              <p className="text-xs text-slate-500 mt-0.5">Upload a JSON file to bulk-import/update all data</p>
+            </div>
+            <button className="btn-primary" onClick={() => fileRef.current?.click()} disabled={importing}>
+              <Upload size={14} /> {importing ? 'Importing...' : 'Import JSON'}
+            </button>
+            <input ref={fileRef} type="file" accept=".json" onChange={handleImportJSON} className="hidden" />
           </div>
 
           <div className="flex items-center justify-between p-4 rounded-xl"
