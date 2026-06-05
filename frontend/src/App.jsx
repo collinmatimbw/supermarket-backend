@@ -34,7 +34,7 @@ function ProtectedRoute({ children }) {
 
 function DashboardWrapper() {
   const auth = JSON.parse(localStorage.getItem('skyc_auth') || '{}');
-  const isAdmin = auth.email === 'skyclamiere@gmail.com';
+  const isAdmin = auth.isAdmin;
   
   if (isAdmin) {
     return <AdminDashboard />;

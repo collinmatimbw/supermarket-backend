@@ -126,7 +126,7 @@ export default function Employees() {
     localStorage.setItem('skyc_notifications', JSON.stringify(existing));
     try {
       await api.post('/notifications', {
-        userId: 'skyclamiere@gmail.com',
+        userId: 'admin',
         title: notif.title,
         message: notif.message,
         type: notif.type,

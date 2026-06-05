@@ -31,7 +31,7 @@ export default function Dashboard() {
   const [selectedCard, setSelectedCard] = useState(null);
   const auth = JSON.parse(localStorage.getItem('skyc_auth') || '{}');
   const currentUser = auth.email;
-  const isAdmin = currentUser === 'skyclamiere@gmail.com';
+  const isAdmin = auth.isAdmin;
 
   // Load local notifications
   useEffect(() => {

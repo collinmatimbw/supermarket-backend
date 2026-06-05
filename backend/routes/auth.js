@@ -1,15 +1,27 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { JWT_SECRET } = require('../middleware/auth');
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password required' });
   try {
-    const user = await User.findOne({ email, password });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) return res.status(401).json({ success: false, message: 'Invalid email or password' });
-    const token = Buffer.from(`${email}:${password}`).toString('base64');
-    res.json({ success: true, data: { token, email } });
+
+    const match = await user.comparePassword(password);
+    if (!match) return res.status(401).json({ success: false, message: 'Invalid email or password' });
+
+    if (!user.password.startsWith('$2')) {
+      user.password = password;
+      await user.save();
+    }
+
+    const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    const isAdmin = user.email === (process.env.ADMIN_EMAIL || '');
+    res.json({ success: true, data: { token, email: user.email, isAdmin } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -19,12 +31,14 @@ router.post('/signup', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password required' });
   try {
-    const existing = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+    const existing = await User.findOne({ email: normalizedEmail });
     if (existing) return res.status(400).json({ success: false, message: 'Email already registered' });
-    const user = new User({ email, password });
+    const user = new User({ email: normalizedEmail, password });
     await user.save();
-    const token = Buffer.from(`${email}:${password}`).toString('base64');
-    res.status(201).json({ success: true, data: { token, email } });
+    const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    const isAdmin = user.email === (process.env.ADMIN_EMAIL || '');
+    res.status(201).json({ success: true, data: { token, email: user.email, isAdmin } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

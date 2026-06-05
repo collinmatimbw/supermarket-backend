@@ -1,21 +1,20 @@
-const mongoose = require('mongoose');
-const User = require('../models/User');
+const jwt = require('jsonwebtoken');
 
-async function authMiddleware(req, res, next) {
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-do-not-use-in-production';
+
+function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ success: false, message: 'Authentication required' });
   }
   try {
-    const decoded = Buffer.from(authHeader.split(' ')[1], 'base64').toString('utf-8');
-    const [email, password] = decoded.split(':');
-    const user = await User.findOne({ email, password });
-    if (!user) return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    req.user = { email };
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = { email: decoded.email };
     next();
   } catch (err) {
-    return res.status(401).json({ success: false, message: 'Invalid authentication' });
+    return res.status(401).json({ success: false, message: 'Invalid or expired token' });
   }
 }
 
-module.exports = { authMiddleware };
+module.exports = { authMiddleware, JWT_SECRET };

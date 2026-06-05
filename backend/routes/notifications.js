@@ -3,6 +3,8 @@ const router = express.Router();
 const Notification = require('../models/Notification');
 const { v4: uuidv4 } = require('uuid');
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || '';
+
 router.get('/', async (req, res) => {
   try {
     const notifs = await Notification.find({ userId: req.user.email }).sort({ createdAt: -1 }).limit(20);
@@ -19,8 +21,9 @@ router.get('/unread', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { userId, title, message, type } = req.body;
+    let { userId, title, message, type } = req.body;
     if (!userId || !message) return res.status(400).json({ success: false, message: 'userId and message required' });
+    if (userId === 'admin') userId = ADMIN_EMAIL;
     const notif = new Notification({
       userId, id: 'N' + uuidv4().slice(0, 8).toUpperCase(),
       title: title || '', message, type: type || 'info',

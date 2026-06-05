@@ -11,7 +11,7 @@ api.interceptors.request.use(config => {
   const auth = localStorage.getItem('skyc_auth');
   if (auth) {
     const { token } = JSON.parse(auth);
-    config.headers.Authorization = `Basic ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
