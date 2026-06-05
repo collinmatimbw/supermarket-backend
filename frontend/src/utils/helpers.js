@@ -33,11 +33,14 @@ export const sendWhatsApp = (phone, message) => {
 };
 
 export const formatReceipt = (sale, businessName = 'SKYC CRM') => {
+  const itemLines = sale.items && sale.items.length > 0
+    ? sale.items.map(i => `  ${i.productName} × ${i.quantity} = TZS ${(i.total || 0).toLocaleString()}`).join('\n')
+    : `  ${sale.productName || 'N/A'} × ${sale.quantity} = TZS ${(sale.total || 0).toLocaleString()}`;
   const lines = [
     `🧾 *${businessName}*`,
     `─────────────────`,
-    `Product: ${sale.productName || 'N/A'}`,
-    `Qty: ${sale.quantity} × TZS ${(sale.price || 0).toLocaleString()}`,
+    itemLines,
+    `─────────────────`,
     `Total: TZS ${(sale.total || 0).toLocaleString()}`,
     `Payment: ${(sale.paymentMethod || 'cash').toUpperCase()}`,
     sale.balance > 0 ? `Balance Due: TZS ${sale.balance.toLocaleString()}` : '',
@@ -49,13 +52,16 @@ export const formatReceipt = (sale, businessName = 'SKYC CRM') => {
 };
 
 export const formatDebtReminder = (sale, businessName = 'SKYC CRM') => {
+  const itemList = sale.items && sale.items.length > 0
+    ? sale.items.map(i => `  ${i.productName} × ${i.quantity}`).join('\n')
+    : `  ${sale.productName || 'N/A'} × ${sale.quantity}`;
   return [
     `🔔 *Payment Reminder - ${businessName}*`,
     `─────────────────`,
     `Dear ${sale.customerName || 'Customer'},`,
     ``,
     `This is a reminder of your outstanding balance:`,
-    `Product: ${sale.productName || 'N/A'}`,
+    itemList,
     `Total: TZS ${(sale.total || 0).toLocaleString()}`,
     `Paid: TZS ${(sale.paidAmount || 0).toLocaleString()}`,
     `*Balance: TZS ${(sale.balance || 0).toLocaleString()}*`,

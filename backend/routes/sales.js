@@ -13,21 +13,35 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { productId, productName, category, quantity, price, total, profit, customerName, customerId, customerPhone, date, paymentMethod, paidAmount, soldBy, notes } = req.body;
-    const saleTotal = Number(total) || 0;
-    const paid = Number(paidAmount) || (paymentMethod === 'credit' ? 0 : saleTotal);
-    const balance = Math.max(0, saleTotal - paid);
-    const paymentStatus = balance >= saleTotal ? 'credit' : balance > 0 ? 'partial' : 'paid';
+    const { items, customerName, customerId, customerPhone, date, paymentMethod, paidAmount, soldBy, notes } = req.body;
+    if (!items || items.length === 0) return res.status(400).json({ success: false, message: 'At least one product is required' });
+
+    const total = items.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
+    const profit = items.reduce((sum, it) => sum + (Number(it.profit) || 0), 0);
+    const qty = items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0);
+    const first = items[0];
+    const paid = Number(paidAmount) || (paymentMethod === 'credit' ? 0 : total);
+    const balance = Math.max(0, total - paid);
+    const paymentStatus = balance >= total ? 'credit' : balance > 0 ? 'partial' : 'paid';
+
     const sale = new Sale({
       userId: req.user.email, id: 'S' + uuidv4().slice(0, 8).toUpperCase(),
-      productId: productId || '', productName: productName || '', category: category || '',
-      quantity: Number(quantity) || 0, price: Number(price) || 0, total: saleTotal,
-      profit: Number(profit) || 0, customerName: customerName || 'Walk-in', customerId: customerId || '', customerPhone: customerPhone || '',
+      items,
+      productId: first.productId || '', productName: first.productName || '', category: first.category || '',
+      quantity: qty, price: first.price || 0, total, profit,
+      customerName: customerName || 'Walk-in', customerId: customerId || '', customerPhone: customerPhone || '',
       date: date || new Date().toISOString().split('T')[0],
       paymentMethod: paymentMethod || 'cash', paymentStatus, paidAmount: paid, balance, soldBy: soldBy || '', notes: notes || '',
     });
     await sale.save();
-    await Product.findOneAndUpdate({ userId: req.user.email, id: productId }, { $inc: { quantity: -(Number(quantity) || 0) } });
+
+    for (const item of items) {
+      await Product.findOneAndUpdate(
+        { userId: req.user.email, id: item.productId },
+        { $inc: { quantity: -(Number(item.quantity) || 0) } }
+      );
+    }
+
     res.status(201).json({ success: true, data: sale });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });

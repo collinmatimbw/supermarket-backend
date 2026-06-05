@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, ShoppingCart, Trash2, Filter, Download, MessageCircle, Phone, DollarSign } from 'lucide-react';
+import { Plus, Search, ShoppingCart, Trash2, Filter, Download, MessageCircle, Phone, DollarSign, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
@@ -7,7 +7,7 @@ import { LoadingState, EmptyState } from '../components/LoadingState';
 import api from '../utils/api';
 import { formatCurrency, formatDate, exportToCSV, sendWhatsApp, formatReceipt, formatDebtReminder } from '../utils/helpers';
 
-const emptyForm = { productId: '', productName: '', quantity: 1, price: 0, total: 0, profit: 0, customerName: 'Walk-in', customerPhone: '', paymentMethod: 'cash', paidAmount: 0, soldBy: '', sendReceipt: false };
+const emptyCartItem = { productId: '', productName: '', quantity: 1, price: 0, total: 0, profit: 0 };
 
 export default function Sales() {
   const [sales, setSales] = useState([]);
@@ -17,12 +17,18 @@ export default function Sales() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [cart, setCart] = useState([]);
   const [saving, setSaving] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [paymentModal, setPaymentModal] = useState(false);
   const [paymentSale, setPaymentSale] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [customerName, setCustomerName] = useState('Walk-in');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paidAmount, setPaidAmount] = useState(0);
+  const [soldBy, setSoldBy] = useState('');
+  const [sendReceipt, setSendReceipt] = useState(false);
 
   const load = useCallback(() => {
     Promise.all([
@@ -45,47 +51,63 @@ export default function Sales() {
     !search || s.productName?.toLowerCase().includes(search.toLowerCase()) || s.customerName?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleProductSelect = (pid) => {
+  const addToCart = (pid) => {
     const p = products.find(pr => pr.id === pid);
-    if (p) {
-      setForm(prev => ({
-        ...prev,
-        productId: p.id,
-        productName: p.name,
-        price: p.price,
-        total: p.price * (prev.quantity || 1),
-        profit: ((p.price - (p.costPrice || 0)) * (prev.quantity || 1)),
-      }));
+    if (!p) return;
+    const existing = cart.find(i => i.productId === pid);
+    if (existing) {
+      setCart(cart.map(i => i.productId === pid
+        ? { ...i, quantity: i.quantity + 1, total: p.price * (i.quantity + 1), profit: ((p.price - (p.costPrice || 0)) * (i.quantity + 1)) }
+        : i
+      ));
+    } else {
+      setCart([...cart, {
+        productId: p.id, productName: p.name, quantity: 1, price: p.price,
+        total: p.price, profit: p.price - (p.costPrice || 0),
+      }]);
     }
   };
 
-  const updateQuantity = (q) => {
-    const quantity = Math.max(1, Number(q) || 1);
-    setForm(prev => {
-      const product = products.find(p => p.id === prev.productId);
-      const costPrice = product?.costPrice || 0;
-      return {
-        ...prev,
-        quantity,
-        total: prev.price * quantity,
-        profit: (prev.price - costPrice) * quantity,
-      };
-    });
+  const updateCartQty = (pid, qty) => {
+    const p = products.find(pr => pr.id === pid);
+    if (!p) return;
+    const quantity = Math.max(1, Number(qty) || 1);
+    setCart(cart.map(i => i.productId === pid
+      ? { ...i, quantity, total: p.price * quantity, profit: (p.price - (p.costPrice || 0)) * quantity }
+      : i
+    ));
   };
 
+  const removeFromCart = (pid) => setCart(cart.filter(i => i.productId !== pid));
+
+  const cartTotal = cart.reduce((s, i) => s + i.total, 0);
+  const cartProfit = cart.reduce((s, i) => s + i.profit, 0);
+
   const openNewSale = () => {
-    setForm(emptyForm);
+    setCart([]);
+    setCustomerName('Walk-in');
+    setCustomerPhone('');
+    setPaymentMethod('cash');
+    setPaidAmount(0);
+    setSoldBy('');
+    setSendReceipt(false);
     setModalOpen(true);
   };
 
   const handleSave = async () => {
-    if (!form.productId && !form.productName) return toast.error('Select a product');
+    if (cart.length === 0) return toast.error('Add at least one product');
     setSaving(true);
     try {
-      const { data } = await api.post('/sales', form);
-      const sale = data.data;
-      if (form.sendReceipt && sale) {
-        sendWhatsApp(form.customerPhone, formatReceipt(sale));
+      const payload = {
+        items: cart,
+        customerName, customerPhone,
+        paymentMethod,
+        paidAmount: paymentMethod === 'credit' ? Number(paidAmount) : cartTotal,
+        soldBy,
+      };
+      const { data } = await api.post('/sales', payload);
+      if (sendReceipt && data.data) {
+        sendWhatsApp(customerPhone, formatReceipt(data.data));
       }
       toast.success('Sale recorded');
       setModalOpen(false);
@@ -190,7 +212,11 @@ export default function Sales() {
                 {searched.map(sale => (
                   <tr key={sale.id} className="border-b border-slate-700/50 hover:bg-white/5">
                     <td className="py-3 px-4 text-slate-400 text-xs">{sale.date}</td>
-                    <td className="py-3 px-4 text-white font-medium">{sale.productName}</td>
+                    <td className="py-3 px-4 text-white font-medium">
+                      {sale.items && sale.items.length > 1
+                        ? <span>{sale.items.length} items</span>
+                        : sale.productName}
+                    </td>
                     <td className="py-3 px-4 text-center text-slate-300">{sale.quantity}</td>
                     <td className="py-3 px-4 text-right text-emerald-400 font-medium">{formatCurrency(sale.total)}</td>
                     <td className="py-3 px-4 text-right text-emerald-400">{formatCurrency(sale.profit)}</td>
@@ -245,85 +271,106 @@ export default function Sales() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="New Sale" size="lg">
         <div className="space-y-4">
+          {/* Product Selector */}
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">Product</label>
-            <select className="form-input" value={form.productId} onChange={e => handleProductSelect(e.target.value)}>
-              <option value="">Select product</option>
+            <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Add Products</label>
+            <select className="form-input" value="" onChange={e => { if (e.target.value) { addToCart(e.target.value); e.target.value = ''; } }}>
+              <option value="">Select product to add...</option>
               {products.map(p => (
                 <option key={p.id} value={p.id}>{p.name} - TZS {p.price.toLocaleString()} (Stock: {p.quantity})</option>
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Quantity</label>
-              <input className="form-input" type="number" min={1} value={form.quantity} onChange={e => updateQuantity(e.target.value)} />
+
+          {/* Cart Items */}
+          {cart.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cart ({cart.length} items)</p>
+              {cart.map(item => (
+                <div key={item.productId} className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{item.productName}</p>
+                    <p className="text-xs text-slate-500">TZS {item.price.toLocaleString()} each</p>
+                  </div>
+                  <input className="form-input w-16 text-center text-sm py-1.5 px-2" type="number" min={1} value={item.quantity}
+                    onChange={e => updateCartQty(item.productId, e.target.value)} />
+                  <p className="text-sm font-semibold text-emerald-400 w-20 text-right">{formatCurrency(item.total)}</p>
+                  <button onClick={() => removeFromCart(item.productId)} className="p-1 rounded text-slate-500 hover:text-red-400 transition-colors">
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <span className="text-sm font-semibold text-white">Total</span>
+                <span className="text-lg font-bold text-emerald-400">{formatCurrency(cartTotal)}</span>
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-400 mb-1 block">Price (TZS)</label>
-              <input className="form-input" type="number" value={form.price} onChange={e => setForm({ ...form, price: Number(e.target.value), total: Number(e.target.value) * form.quantity })} />
+          )}
+
+          {cart.length === 0 && (
+            <div className="p-6 rounded-xl bg-white/5 text-center">
+              <ShoppingCart size={24} className="mx-auto mb-2 text-slate-500" />
+              <p className="text-sm text-slate-500">No products added yet</p>
             </div>
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5">
-            <span className="text-sm text-slate-400">Total</span>
-            <span className="text-lg font-bold text-emerald-400">{formatCurrency(form.total)}</span>
-          </div>
+          )}
+
           <div>
             <label className="text-xs font-semibold text-slate-400 mb-1 block">Customer</label>
-            <select className="form-input" value={form.customerName} onChange={e => {
+            <select className="form-input" value={customerName} onChange={e => {
               const c = customers.find(c => c.name === e.target.value);
-              setForm({ ...form, customerName: e.target.value, customerPhone: c?.phone || '' });
+              setCustomerName(e.target.value);
+              setCustomerPhone(c?.phone || '');
             }}>
               <option value="Walk-in">Walk-in Customer</option>
               {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
           </div>
-          {(form.customerName && form.customerName !== 'Walk-in') && (
+          {(customerName && customerName !== 'Walk-in') && (
             <div>
               <label className="text-xs font-semibold text-slate-400 mb-1 block">Customer Phone</label>
-              <input className="form-input" placeholder="Phone for WhatsApp receipt" value={form.customerPhone} onChange={e => setForm({ ...form, customerPhone: e.target.value })} />
+              <input className="form-input" placeholder="Phone for WhatsApp receipt" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
             </div>
           )}
           <div>
             <label className="text-xs font-semibold text-slate-400 mb-1 block">Payment Method</label>
             <div className="flex gap-2">
               {['cash', 'mobile', 'credit'].map(m => (
-                <button key={m} onClick={() => setForm({ ...form, paymentMethod: m, paidAmount: m === 'credit' ? 0 : form.total })}
-                  className={`flex-1 p-2.5 rounded-xl text-xs font-medium capitalize transition-all ${form.paymentMethod === m ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-slate-400 border border-transparent hover:bg-white/10'}`}>
+                <button key={m} onClick={() => { setPaymentMethod(m); if (m !== 'credit') setPaidAmount(0); }}
+                  className={`flex-1 p-2.5 rounded-xl text-xs font-medium capitalize transition-all ${paymentMethod === m ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-slate-400 border border-transparent hover:bg-white/10'}`}>
                   {m}
                 </button>
               ))}
             </div>
           </div>
-          {form.paymentMethod === 'credit' && (
+          {paymentMethod === 'credit' && (
             <div>
               <label className="text-xs font-semibold text-slate-400 mb-1 block">Amount Paid Now (TZS)</label>
-              <input className="form-input" type="number" min={0} max={form.total} placeholder="0" value={form.paidAmount} onChange={e => setForm({ ...form, paidAmount: Number(e.target.value) })} />
-              {form.paidAmount < form.total && (
-                <p className="text-xs text-yellow-400 mt-1">Balance: {formatCurrency(form.total - form.paidAmount)}</p>
+              <input className="form-input" type="number" min={0} max={cartTotal} placeholder="0" value={paidAmount} onChange={e => setPaidAmount(Number(e.target.value))} />
+              {Number(paidAmount) < cartTotal && (
+                <p className="text-xs text-yellow-400 mt-1">Balance: {formatCurrency(cartTotal - Number(paidAmount))}</p>
               )}
             </div>
           )}
           <div>
             <label className="text-xs font-semibold text-slate-400 mb-1 block">Sold By</label>
             {employees.length > 0 ? (
-              <select className="form-input" value={form.soldBy} onChange={e => setForm({ ...form, soldBy: e.target.value })}>
+              <select className="form-input" value={soldBy} onChange={e => setSoldBy(e.target.value)}>
                 <option value="">Select employee</option>
                 {employees.filter(e => e.status === 'active').map(e => <option key={e.id} value={e.name}>{e.name}</option>)}
               </select>
             ) : (
-              <input className="form-input" placeholder="Employee name (optional)" value={form.soldBy} onChange={e => setForm({ ...form, soldBy: e.target.value })} />
+              <input className="form-input" placeholder="Employee name (optional)" value={soldBy} onChange={e => setSoldBy(e.target.value)} />
             )}
           </div>
-          {form.customerName && form.customerName !== 'Walk-in' && form.customerPhone && (
+          {customerName && customerName !== 'Walk-in' && customerPhone && (
             <label className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 cursor-pointer">
-              <input type="checkbox" checked={form.sendReceipt} onChange={e => setForm({ ...form, sendReceipt: e.target.checked })}
+              <input type="checkbox" checked={sendReceipt} onChange={e => setSendReceipt(e.target.checked)}
                 className="rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500" />
               <span className="text-xs text-slate-300">Send WhatsApp receipt to customer</span>
             </label>
           )}
-          <button onClick={handleSave} className="btn-primary w-full justify-center py-3 text-base" disabled={saving}>
-            {saving ? 'Recording...' : 'Complete Sale'}
+          <button onClick={handleSave} className="btn-primary w-full justify-center py-3 text-base" disabled={saving || cart.length === 0}>
+            {saving ? 'Recording...' : `Complete Sale (${cart.length} item${cart.length > 1 ? 's' : ''})`}
           </button>
         </div>
       </Modal>
@@ -335,7 +382,7 @@ export default function Sales() {
               <div className="p-3 rounded-xl bg-white/5">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-slate-400">Product</span>
-                  <span className="text-white">{paymentSale.productName}</span>
+                  <span className="text-white">{paymentSale.items?.length > 1 ? `${paymentSale.items.length} items` : paymentSale.productName}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-slate-400">Customer</span>
