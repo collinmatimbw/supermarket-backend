@@ -39,19 +39,19 @@ export default function Customers() {
     !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.phone?.includes(search)
   );
 
-  const getLastPurchase = (customerId) => {
-    const customerSales = sales.filter(s => s.customerId === customerId || s.customerName === customerId);
+  const getLastPurchase = (customer) => {
+    const customerSales = sales.filter(s => s.customerId === customer.id || s.customerName === customer.name);
     if (customerSales.length === 0) return null;
     return customerSales.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
   };
 
-  const getTotalSpent = (customerId) => {
-    return sales.filter(s => s.customerId === customerId || s.customerName === customerId)
+  const getTotalSpent = (customer) => {
+    return sales.filter(s => s.customerId === customer.id || s.customerName === customer.name)
       .reduce((sum, s) => sum + Number(s.total || 0), 0);
   };
 
-  const getStatus = (customerId) => {
-    const lastSale = getLastPurchase(customerId);
+  const getStatus = (customer) => {
+    const lastSale = getLastPurchase(customer);
     if (!lastSale) return { label: t('inactive'), color: 'bg-slate-500/20 text-slate-400' };
     const daysSince = Math.floor((Date.now() - new Date(lastSale.date).getTime()) / (1000 * 60 * 60 * 24));
     if (daysSince <= 30) return { label: t('active'), color: 'bg-emerald-500/20 text-emerald-400' };
@@ -96,9 +96,9 @@ export default function Customers() {
         <div className="flex gap-2">
           <button onClick={() => exportToCSV(customers.map(c => ({
             ...c,
-            totalSpent: getTotalSpent(c.id),
-            lastPurchase: getLastPurchase(c.id)?.date || '',
-            status: getStatus(c.id).label
+            totalSpent: getTotalSpent(c),
+            lastPurchase: getLastPurchase(c)?.date || '',
+            status: getStatus(c).label
           })), 'customers-export', [
             { label: 'Name', key: 'name' },
             { label: 'Phone', key: 'phone' },
@@ -128,9 +128,9 @@ export default function Customers() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map(c => {
-            const lastSale = getLastPurchase(c.id);
-            const totalSpent = getTotalSpent(c.id);
-            const status = getStatus(c.id);
+            const lastSale = getLastPurchase(c);
+            const totalSpent = getTotalSpent(c);
+            const status = getStatus(c);
             const initials = c.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
             return (
               <div key={c.id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5 hover:border-slate-600/50 transition-all">
@@ -195,7 +195,7 @@ export default function Customers() {
           const totalVisits = cSales.length;
           const outstandingBalance = cSales.reduce((s, sale) => s + Number(sale.balance || 0), 0);
           const lastSale = cSales.length > 0 ? cSales.sort((a, b) => new Date(b.date) - new Date(a.date))[0] : null;
-          const status = getStatus(c.id);
+          const status = getStatus(c);
           const daysSinceLast = lastSale ? Math.floor((Date.now() - new Date(lastSale.date).getTime()) / (1000 * 60 * 60 * 24)) : null;
 
           // Favorite products - count by product name

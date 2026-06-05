@@ -14,13 +14,35 @@ const getPeriodFilter = (period, userId) => {
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
   const today = `${y}-${m}-${d}`;
-  if (period === 'today') return { userId, date: today };
-  if (period === 'week') {
-    const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
-    return { userId, date: { $gte: weekAgo.toISOString().split('T')[0] } };
+  if (period === 'today' || period === 'yesterday') {
+    if (period === 'yesterday') {
+      const yest = new Date(now); yest.setDate(yest.getDate() - 1);
+      const yd = String(yest.getDate()).padStart(2, '0');
+      const ym = String(yest.getMonth() + 1).padStart(2, '0');
+      return { userId, date: `${yest.getFullYear()}-${ym}-${yd}` };
+    }
+    return { userId, date: today };
   }
-  if (period === 'month') return { userId, date: { $regex: `^${y}-${m}` } };
-  if (period === 'year') return { userId, date: { $regex: `^${y}` } };
+  if (period === 'week' || period === 'prev_week') {
+    const start = new Date(now); start.setDate(start.getDate() - (period === 'prev_week' ? 14 : 7));
+    const end = period === 'prev_week' ? new Date(now) : null;
+    if (end) end.setDate(end.getDate() - 7);
+    const startStr = start.toISOString().split('T')[0];
+    if (period === 'prev_week') return { userId, date: { $gte: startStr, $lt: today } };
+    return { userId, date: { $gte: startStr } };
+  }
+  if (period === 'month' || period === 'prev_month') {
+    if (period === 'prev_month') {
+      const pm = m === '01' ? '12' : String(Number(m) - 1).padStart(2, '0');
+      const py = m === '01' ? y - 1 : y;
+      return { userId, date: { $regex: `^${py}-${pm}` } };
+    }
+    return { userId, date: { $regex: `^${y}-${m}` } };
+  }
+  if (period === 'year' || period === 'prev_year') {
+    if (period === 'prev_year') return { userId, date: { $regex: `^${y - 1}` } };
+    return { userId, date: { $regex: `^${y}` } };
+  }
   return { userId };
 };
 

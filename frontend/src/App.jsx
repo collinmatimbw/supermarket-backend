@@ -19,7 +19,7 @@ import Leads from './pages/Leads';
 import Tasks from './pages/Tasks';
 import Reports from './pages/Reports';
 import Expenses from './pages/Expenses';
-import Employees from './pages/Employees';
+import Savings from './pages/Savings';
 import Capital from './pages/Capital';
 import Chat from './pages/Chat';
 import Settings from './pages/Settings';
@@ -112,7 +112,7 @@ export default function App() {
             <Route path="/tasks" element={<ProtectedRoute><Layout><Tasks /></Layout></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Layout><Expenses /></Layout></ProtectedRoute>} />
-            <Route path="/employees" element={<ProtectedRoute><Layout><Employees /></Layout></ProtectedRoute>} />
+            <Route path="/savings" element={<ProtectedRoute><Layout><Savings /></Layout></ProtectedRoute>} />
             <Route path="/capital" element={<ProtectedRoute><Layout><Capital /></Layout></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><Layout><Chat /></Layout></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />

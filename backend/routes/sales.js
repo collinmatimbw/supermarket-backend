@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
     const first = items[0];
     const paid = Number(paidAmount) || (paymentMethod === 'credit' ? 0 : total);
     const balance = Math.max(0, total - paid);
-    const paymentStatus = balance >= total ? 'credit' : balance > 0 ? 'partial' : 'paid';
+    const paymentStatus = total <= 0 ? 'paid' : balance >= total ? 'credit' : balance > 0 ? 'partial' : 'paid';
 
     const sale = new Sale({
       userId: req.user.email, id: 'S' + uuidv4().slice(0, 8).toUpperCase(),
@@ -73,7 +73,7 @@ router.put('/:id/payment', async (req, res) => {
     if (!sale) return res.status(404).json({ success: false, message: 'Sale not found' });
     const newPaid = (sale.paidAmount || 0) + (Number(paidAmount) || 0);
     const balance = Math.max(0, (sale.total || 0) - newPaid);
-    const paymentStatus = balance >= (sale.total || 0) ? 'credit' : balance > 0 ? 'partial' : 'paid';
+    const paymentStatus = (sale.total || 0) <= 0 ? 'paid' : balance >= (sale.total || 0) ? 'credit' : balance > 0 ? 'partial' : 'paid';
     const updated = await Sale.findOneAndUpdate({ userId: req.user.email, id: req.params.id },
       { paidAmount: newPaid, balance, paymentStatus }, { new: true });
     res.json({ success: true, data: updated });

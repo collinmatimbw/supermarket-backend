@@ -113,11 +113,10 @@ export default function Employees() {
   };
 
   const handleForgotPin = async () => {
-    const pin = localStorage.getItem('skyc_emp_pin') || 'Not set';
     const notif = {
       id: Date.now().toString(),
       title: 'Employee PIN Reset Requested',
-      message: `Someone requested the employee PIN. Current PIN: ${pin}`,
+      message: 'An employee PIN reset has been requested. Set a new PIN in Settings.',
       type: 'warning',
       read: false,
       createdAt: new Date().toISOString(),

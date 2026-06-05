@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Cloud, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
 import { getPendingQueue } from '../utils/db';
 import { syncPending } from '../utils/offlineQueue';
@@ -7,6 +7,7 @@ export default function SyncBanner({ onSync }) {
   const [pending, setPending] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [result, setResult] = useState(null);
+  const autoSyncFired = useRef(false);
 
   const checkPending = useCallback(async () => {
     try {
@@ -15,19 +16,7 @@ export default function SyncBanner({ onSync }) {
     } catch {}
   }, []);
 
-  useEffect(() => {
-    checkPending();
-    const interval = setInterval(checkPending, 5000);
-    return () => clearInterval(interval);
-  }, [checkPending]);
-
-  useEffect(() => {
-    const goOnline = () => { checkPending(); };
-    window.addEventListener('online', goOnline);
-    return () => window.removeEventListener('online', goOnline);
-  }, [checkPending]);
-
-  const handleSync = async () => {
+  const handleSync = useCallback(async () => {
     if (syncing || pending === 0) return;
     setSyncing(true);
     setResult(null);
@@ -37,11 +26,26 @@ export default function SyncBanner({ onSync }) {
     await checkPending();
     if (onSync) onSync();
     setTimeout(() => setResult(null), 4000);
-  };
+  }, [syncing, pending, onSync, checkPending]);
 
   useEffect(() => {
-    if (navigator.onLine && pending > 0) handleSync();
-  }, []);
+    checkPending();
+    const interval = setInterval(checkPending, 5000);
+    return () => clearInterval(interval);
+  }, [checkPending]);
+
+  useEffect(() => {
+    if (navigator.onLine && pending > 0 && !autoSyncFired.current) {
+      autoSyncFired.current = true;
+      handleSync();
+    }
+  }, [pending, handleSync]);
+
+  useEffect(() => {
+    const goOnline = () => { autoSyncFired.current = false; checkPending(); };
+    window.addEventListener('online', goOnline);
+    return () => window.removeEventListener('online', goOnline);
+  }, [checkPending]);
 
   if (!navigator.onLine) return null;
 

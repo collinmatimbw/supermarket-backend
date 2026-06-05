@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users,
   BarChart3, Settings, ChevronLeft, ChevronRight,
   X, Target, ClipboardList, FileText, Globe, Sun, Moon, LogOut, Shield,
-  TrendingDown, UserCheck, Wallet, MessageSquare
+  TrendingDown, Wallet, MessageSquare
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -26,7 +26,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
     { path: '/leads', label: t('leads'), icon: Target },
     { path: '/sales', label: t('sales'), icon: ShoppingCart },
     { path: '/expenses', label: t('expenses'), icon: TrendingDown },
-    { path: '/employees', label: t('employees'), icon: UserCheck },
+    { path: '/savings', label: t('savings'), icon: Wallet },
     { path: '/capital', label: t('capital'), icon: Wallet },
     { path: '/products', label: t('products'), icon: Package },
     { path: '/tasks', label: t('tasks'), icon: ClipboardList },

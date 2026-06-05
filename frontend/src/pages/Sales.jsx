@@ -25,6 +25,7 @@ export default function Sales() {
   const [paymentSale, setPaymentSale] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [customerName, setCustomerName] = useState('Walk-in');
+  const [customerId, setCustomerId] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paidAmount, setPaidAmount] = useState(0);
@@ -52,7 +53,9 @@ export default function Sales() {
 
   const filtered = paymentFilter === 'all' ? sales : sales.filter(s => s.paymentMethod === paymentFilter);
   const searched = filtered.filter(s =>
-    !search || s.productName?.toLowerCase().includes(search.toLowerCase()) || s.customerName?.toLowerCase().includes(search.toLowerCase())
+    !search
+    || (s.productName?.toLowerCase() + ' ' + (s.items || []).map(i => i.productName).join(' ')).includes(search.toLowerCase())
+    || s.customerName?.toLowerCase().includes(search.toLowerCase())
   );
 
   const addToCart = (pid) => {
@@ -102,6 +105,7 @@ export default function Sales() {
   const openNewSale = () => {
     setCart([]);
     setCustomerName('Walk-in');
+    setCustomerId('');
     setCustomerPhone('');
     setPaymentMethod('cash');
     setPaidAmount(0);
@@ -116,7 +120,7 @@ export default function Sales() {
 
     const payload = {
       items: cart,
-      customerName, customerPhone,
+      customerName, customerId, customerPhone,
       paymentMethod,
       paidAmount: paymentMethod === 'credit' ? Number(paidAmount) : cartTotal,
       soldBy,
@@ -150,7 +154,7 @@ export default function Sales() {
 
   const openPayment = (sale) => {
     setPaymentSale(sale);
-    setPaymentAmount(sale.balance);
+    setPaymentAmount(sale.balance || 0);
     setPaymentModal(true);
   };
 
@@ -362,6 +366,7 @@ export default function Sales() {
             <select className="form-input" value={customerName} onChange={e => {
               const c = customers.find(c => c.name === e.target.value);
               setCustomerName(e.target.value);
+              setCustomerId(c?.id || '');
               setCustomerPhone(c?.phone || '');
             }}>
               <option value="Walk-in">Walk-in Customer</option>

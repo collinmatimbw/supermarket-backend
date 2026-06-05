@@ -19,6 +19,7 @@ const capitalRouter = require('./routes/capital');
 const notificationRouter = require('./routes/notifications');
 const chatRouter = require('./routes/chat');
 const analysisRouter = require('./routes/analysis');
+const savingsRouter = require('./routes/savings');
 const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
@@ -46,6 +47,7 @@ app.use('/api/capital', authMiddleware, capitalRouter);
 app.use('/api/notifications', authMiddleware, notificationRouter);
 app.use('/api/chat', authMiddleware, chatRouter);
 app.use('/api/analysis', authMiddleware, analysisRouter);
+app.use('/api/savings', authMiddleware, savingsRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
