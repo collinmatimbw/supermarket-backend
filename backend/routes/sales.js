@@ -16,6 +16,18 @@ router.post('/', async (req, res) => {
     const { items, customerName, customerId, customerPhone, date, paymentMethod, paidAmount, soldBy, notes } = req.body;
     if (!items || items.length === 0) return res.status(400).json({ success: false, message: 'At least one product is required' });
 
+    // Validate stock for every item
+    for (const item of items) {
+      const product = await Product.findOne({ userId: req.user.email, id: item.productId });
+      if (!product) return res.status(400).json({ success: false, message: `Product not found: ${item.productName}` });
+      if ((product.quantity || 0) < (item.quantity || 0)) {
+        return res.status(400).json({
+          success: false,
+          message: `Not enough stock for ${product.name}. Available: ${product.quantity}, requested: ${item.quantity}`
+        });
+      }
+    }
+
     const total = items.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
     const profit = items.reduce((sum, it) => sum + (Number(it.profit) || 0), 0);
     const qty = items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0);

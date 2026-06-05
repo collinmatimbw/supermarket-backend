@@ -54,8 +54,12 @@ export default function Sales() {
   const addToCart = (pid) => {
     const p = products.find(pr => pr.id === pid);
     if (!p) return;
+    const stock = p.quantity || 0;
+    if (stock <= 0) return toast.error(`${p.name} is out of stock`);
+
     const existing = cart.find(i => i.productId === pid);
     if (existing) {
+      if (existing.quantity + 1 > stock) return toast.error(`Only ${stock} of ${p.name} in stock`);
       setCart(cart.map(i => i.productId === pid
         ? { ...i, quantity: i.quantity + 1, total: p.price * (i.quantity + 1), profit: ((p.price - (p.costPrice || 0)) * (i.quantity + 1)) }
         : i
@@ -71,7 +75,8 @@ export default function Sales() {
   const updateCartQty = (pid, qty) => {
     const p = products.find(pr => pr.id === pid);
     if (!p) return;
-    const quantity = Math.max(1, Number(qty) || 1);
+    const stock = p.quantity || 0;
+    const quantity = Math.min(Math.max(1, Number(qty) || 1), stock);
     setCart(cart.map(i => i.productId === pid
       ? { ...i, quantity, total: p.price * quantity, profit: (p.price - (p.costPrice || 0)) * quantity }
       : i
@@ -82,6 +87,13 @@ export default function Sales() {
 
   const cartTotal = cart.reduce((s, i) => s + i.total, 0);
   const cartProfit = cart.reduce((s, i) => s + i.profit, 0);
+
+  const stockErrors = cart.map(item => {
+    const p = products.find(pr => pr.id === item.productId);
+    const stock = p ? (p.quantity || 0) : 0;
+    return { productId: item.productId, name: item.productName, qty: item.quantity, stock, overstock: item.quantity > stock };
+  });
+  const hasOverstock = stockErrors.some(e => e.overstock);
 
   const openNewSale = () => {
     setCart([]);
@@ -96,6 +108,7 @@ export default function Sales() {
 
   const handleSave = async () => {
     if (cart.length === 0) return toast.error('Add at least one product');
+    if (hasOverstock) return toast.error('Some products exceed available stock');
     setSaving(true);
     try {
       const payload = {
@@ -276,9 +289,16 @@ export default function Sales() {
             <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Add Products</label>
             <select className="form-input" value="" onChange={e => { if (e.target.value) { addToCart(e.target.value); e.target.value = ''; } }}>
               <option value="">Select product to add...</option>
-              {products.map(p => (
+              {products.filter(p => (p.quantity || 0) > 0).map(p => (
                 <option key={p.id} value={p.id}>{p.name} - TZS {p.price.toLocaleString()} (Stock: {p.quantity})</option>
               ))}
+              {products.filter(p => (p.quantity || 0) <= 0).length > 0 && (
+                <optgroup label="— Out of Stock —">
+                  {products.filter(p => (p.quantity || 0) <= 0).map(p => (
+                    <option key={p.id} value={p.id} disabled>{p.name} (0 in stock)</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
 
@@ -286,20 +306,26 @@ export default function Sales() {
           {cart.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cart ({cart.length} items)</p>
-              {cart.map(item => (
-                <div key={item.productId} className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5">
+              {cart.map(item => {
+                const err = stockErrors.find(e => e.productId === item.productId);
+                const oos = err && err.overstock;
+                return (
+                <div key={item.productId} className={`flex items-center gap-2 p-2.5 rounded-xl ${oos ? 'bg-red-500/10 border border-red-500/30' : 'bg-white/5'}`}>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">{item.productName}</p>
-                    <p className="text-xs text-slate-500">TZS {item.price.toLocaleString()} each</p>
+                    <p className={`text-xs ${oos ? 'text-red-400' : 'text-slate-500'}`}>
+                      TZS {item.price.toLocaleString()} each{oos ? ` · Stock: ${err.stock}` : ` · ${err.stock} left`}
+                    </p>
                   </div>
-                  <input className="form-input w-16 text-center text-sm py-1.5 px-2" type="number" min={1} value={item.quantity}
+                  <input className={`form-input w-16 text-center text-sm py-1.5 px-2 ${oos ? 'border-red-500/50 text-red-400' : ''}`} type="number" min={1} max={err?.stock || 9999} value={item.quantity}
                     onChange={e => updateCartQty(item.productId, e.target.value)} />
-                  <p className="text-sm font-semibold text-emerald-400 w-20 text-right">{formatCurrency(item.total)}</p>
+                  <p className={`text-sm font-semibold w-20 text-right ${oos ? 'text-red-400' : 'text-emerald-400'}`}>{formatCurrency(item.total)}</p>
                   <button onClick={() => removeFromCart(item.productId)} className="p-1 rounded text-slate-500 hover:text-red-400 transition-colors">
                     <X size={14} />
                   </button>
                 </div>
-              ))}
+                );
+              })}
               <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                 <span className="text-sm font-semibold text-white">Total</span>
                 <span className="text-lg font-bold text-emerald-400">{formatCurrency(cartTotal)}</span>
@@ -369,8 +395,8 @@ export default function Sales() {
               <span className="text-xs text-slate-300">Send WhatsApp receipt to customer</span>
             </label>
           )}
-          <button onClick={handleSave} className="btn-primary w-full justify-center py-3 text-base" disabled={saving || cart.length === 0}>
-            {saving ? 'Recording...' : `Complete Sale (${cart.length} item${cart.length > 1 ? 's' : ''})`}
+          <button onClick={handleSave} className="btn-primary w-full justify-center py-3 text-base" disabled={saving || cart.length === 0 || hasOverstock}>
+            {saving ? 'Recording...' : hasOverstock ? 'Some items exceed stock' : `Complete Sale (${cart.length} item${cart.length > 1 ? 's' : ''})`}
           </button>
         </div>
       </Modal>
