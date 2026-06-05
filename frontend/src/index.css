@@ -25,6 +25,49 @@
   --red-bg: rgba(248,113,113,0.12);
 }
 
+[data-theme="light"] {
+  --bg-primary: #f8f6f3;
+  --bg-secondary: #f0ede8;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --border: rgba(0, 0, 0, 0.07);
+  --accent: #059669;
+  --text-primary: #1e293b;
+  --text-muted: #64748b;
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --input-bg: #ffffff;
+  --input-border: rgba(0, 0, 0, 0.12);
+  --table-header: #64748b;
+  --table-row-hover: rgba(0, 0, 0, 0.02);
+  --modal-overlay: rgba(0, 0, 0, 0.2);
+  --green: #059669;
+  --green-bg: rgba(5, 150, 105, 0.08);
+  --red: #dc2626;
+  --red-bg: rgba(220, 38, 38, 0.08);
+}
+
+[data-theme="light"] .btn-secondary {
+  background: rgba(0, 0, 0, 0.04);
+  color: #1e293b;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+[data-theme="light"] .btn-secondary:hover { background: rgba(0, 0, 0, 0.08); }
+
+[data-theme="light"] .nav-active {
+  background: rgba(5, 150, 105, 0.08);
+  border-right-color: #059669;
+}
+
+[data-theme="light"] .glass-hover:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] body::before {
+  opacity: 0.08;
+}
+
 * { box-sizing: border-box; }
 
 body {
