@@ -83,6 +83,14 @@ function Layout({ children }) {
 export default function App() {
   const auth = localStorage.getItem('skyc_auth');
 
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.target.type === 'number') e.preventDefault();
+    };
+    document.addEventListener('wheel', handler, { passive: false });
+    return () => document.removeEventListener('wheel', handler);
+  }, []);
+
   return (
     <LanguageProvider>
       <ThemeProvider>
