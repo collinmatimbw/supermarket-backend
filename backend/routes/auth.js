@@ -16,8 +16,14 @@ router.post('/login', async (req, res) => {
 
     if (!user.password.startsWith('$2')) {
       user.password = password;
-      await user.save();
     }
+
+    const isAdminEmail = user.email === (process.env.ADMIN_EMAIL || '').toLowerCase();
+    if (isAdminEmail && user.role !== 'admin') {
+      user.role = 'admin';
+    }
+
+    await user.save();
 
     const token = jwt.sign({ email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ success: true, data: { token, email: user.email, role: user.role, isAdmin: user.role === 'admin' } });
