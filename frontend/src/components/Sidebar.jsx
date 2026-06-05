@@ -3,17 +3,15 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, Users,
   BarChart3, Settings, ChevronLeft, ChevronRight,
-  X, Target, ClipboardList, FileText, Globe, Sun, Moon, LogOut, Shield,
+  X, Target, ClipboardList, FileText, Globe, LogOut, Shield,
   TrendingDown, UserCheck, Wallet, MessageSquare
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import { useTheme } from '../context/ThemeContext';
 
 export default function Sidebar({ mobileOpen, onToggleMobile }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { lang, setLang, t } = useLanguage();
-  const { theme, toggleTheme } = useTheme();
 
   // Get logged in user info
   const auth = JSON.parse(localStorage.getItem('skyc_auth') || '{}');
@@ -113,16 +111,6 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
               SW
             </button>
           </div>
-
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 transition-all"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            {theme === 'dark' ? <Moon size={13} /> : <Sun size={13} />}
-            <span>{theme === 'dark' ? t('darkMode') : t('lightMode')}</span>
-          </button>
 
           {/* Sign Out */}
           <button
