@@ -49,18 +49,18 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-6 border-b border-white/5">
+      <div className="flex items-center gap-3 px-5 py-6 border-b" style={{ borderColor: 'var(--sidebar-border, rgba(255,255,255,0.06))' }}>
         <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #059669, #0891b2)' }}>
           <img src="/mylogo.png" alt="SKYC CRM" className="w-full h-full object-cover" />
         </div>
         {!collapsed && (
           <div className="overflow-hidden">
-            <p className="font-bold text-sm text-slate-100 leading-none">SKYC CRM</p>
-            <p className="text-xs text-slate-500 mt-0.5">{t('supermarketSuite')}</p>
+            <p className="font-bold text-sm leading-none" style={{ color: 'var(--text-primary)' }}>SKYC CRM</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{t('supermarketSuite')}</p>
           </div>
         )}
-        <button onClick={onToggleMobile} className="lg:hidden ml-auto p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-all">
+        <button onClick={onToggleMobile} className="lg:hidden ml-auto p-1.5 rounded-lg transition-all" style={{ color: 'var(--text-muted)' }}>
           <X size={18} />
         </button>
       </div>
@@ -78,7 +78,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group ${
                 active
                   ? 'nav-active'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                  : 'nav-inactive'
               }`}
               title={collapsed ? label : undefined}
             >
@@ -98,17 +98,19 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
       {!collapsed && (
         <div className="mx-3 mb-3 space-y-2">
           {/* Language Toggle */}
-          <div className="flex items-center gap-2 p-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <Globe size={13} className="text-slate-400 flex-shrink-0" />
+          <div className="flex items-center gap-2 p-2 rounded-xl" style={{ background: 'var(--bg-primary)', border: '1px solid var(--sidebar-border, rgba(255,255,255,0.06))' }}>
+            <Globe size={13} className="flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
             <button
               onClick={() => setLang('en')}
-              className={`flex-1 text-xs font-medium py-1 rounded transition-all ${lang === 'en' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex-1 text-xs font-medium py-1 rounded transition-all ${lang === 'en' ? 'bg-emerald-500/20 text-emerald-500' : ''}`}
+              style={{ color: lang === 'en' ? '#059669' : 'var(--text-muted)' }}
             >
               EN
             </button>
             <button
               onClick={() => setLang('sw')}
-              className={`flex-1 text-xs font-medium py-1 rounded transition-all ${lang === 'sw' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex-1 text-xs font-medium py-1 rounded transition-all ${lang === 'sw' ? 'bg-emerald-500/20 text-emerald-500' : ''}`}
+              style={{ color: lang === 'sw' ? '#059669' : 'var(--text-muted)' }}
             >
               SW
             </button>
@@ -117,8 +119,8 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 transition-all"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+            className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-medium transition-all"
+            style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)', border: '1px solid var(--sidebar-border, rgba(255,255,255,0.06))' }}
           >
             {theme === 'dark' ? <Moon size={13} /> : <Sun size={13} />}
             <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
@@ -127,8 +129,8 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
           {/* Sign Out */}
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-medium text-red-400/70 hover:text-red-400 hover:bg-red-400/5 transition-all"
-            style={{ border: '1px solid rgba(239,68,68,0.1)' }}
+            className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-medium transition-all"
+            style={{ color: 'var(--red)', background: 'var(--bg-primary)', border: '1px solid rgba(220,38,38,0.15)' }}
           >
             <LogOut size={13} />
             <span>{t('signOut')}</span>
@@ -138,10 +140,10 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
 
       {/* Status */}
       {!collapsed && (
-        <div className="mx-3 mb-4 p-3 rounded-xl" style={{ background: 'rgba(110,231,183,0.06)', border: '1px solid rgba(110,231,183,0.12)' }}>
+        <div className="mx-3 mb-4 p-3 rounded-xl" style={{ background: 'var(--green-bg)', border: '1px solid rgba(5,150,105,0.15)' }}>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-slow" />
-            <span className="text-xs text-emerald-400 font-medium">{t('systemOnline')}</span>
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-slow" />
+            <span className="text-xs font-medium" style={{ color: 'var(--green)' }}>{t('systemOnline')}</span>
           </div>
           <p className="text-xs text-slate-500 mt-1">{t('crmActive')}</p>
         </div>
@@ -169,8 +171,8 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
           width: collapsed ? 72 : 240,
           minHeight: '100vh',
           borderRadius: 0,
-          borderRight: '1px solid rgba(255,255,255,0.06)',
-          background: 'var(--bg-secondary)',
+          borderRight: '1px solid var(--sidebar-border, rgba(255,255,255,0.06))',
+          background: 'var(--sidebar-bg, var(--bg-secondary))',
         }}
       >
         {sidebarContent}
@@ -182,8 +184,8 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
         }`}
         style={{
           width: 280,
-          background: 'var(--bg-secondary)',
-          borderRight: '1px solid rgba(255,255,255,0.06)',
+          background: 'var(--sidebar-bg, var(--bg-secondary))',
+          borderRight: '1px solid var(--sidebar-border, rgba(255,255,255,0.06))',
         }}
       >
         {sidebarContent}
