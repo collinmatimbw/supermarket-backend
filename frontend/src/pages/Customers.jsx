@@ -10,6 +10,24 @@ import { formatCurrency, exportToCSV, formatDate } from '../utils/helpers';
 
 const emptyForm = { name: '', phone: '', email: '', address: '' };
 
+const s = (light, dark) => `var(--${light}, ${dark})`;
+const colors = {
+  cardBg: s('bg-card', 'rgba(15,23,42,0.8)'),
+  cardBorder: s('border', 'rgba(255,255,255,0.07)'),
+  cardHoverBorder: s('', '#334155'),
+  textPrimary: s('text-primary', '#f1f5f9'),
+  textMuted: s('text-muted', '#94a3b8'),
+  green: s('green', '#6ee7b7'),
+  greenBg: s('green-bg', 'rgba(110,231,183,0.12)'),
+  red: s('red', '#f87171'),
+  redBg: s('red-bg', 'rgba(248,113,113,0.12)'),
+  slateBg: 'rgba(100,116,139,0.08)',
+  slateText: 'var(--text-muted, #94a3b8)',
+  white5: 'rgba(255,255,255,0.05)',
+  white10: 'rgba(255,255,255,0.1)',
+  hoverBg: 'var(--table-row-hover, rgba(255,255,255,0.025))',
+};
+
 export default function Customers() {
   const { t } = useLanguage();
   const [customers, setCustomers] = useState([]);
@@ -52,11 +70,17 @@ export default function Customers() {
 
   const getStatus = (customer) => {
     const lastSale = getLastPurchase(customer);
-    if (!lastSale) return { label: t('inactive'), color: 'bg-slate-500/20 text-slate-400' };
+    if (!lastSale) return { label: t('inactive'), color: 'slate' };
     const daysSince = Math.floor((Date.now() - new Date(lastSale.date).getTime()) / (1000 * 60 * 60 * 24));
-    if (daysSince <= 30) return { label: t('active'), color: 'bg-emerald-500/20 text-emerald-400' };
-    if (daysSince <= 90) return { label: t('atRisk'), color: 'bg-red-500/20 text-red-400' };
-    return { label: t('inactive'), color: 'bg-slate-500/20 text-slate-400' };
+    if (daysSince <= 30) return { label: t('active'), color: 'green' };
+    if (daysSince <= 90) return { label: t('atRisk'), color: 'red' };
+    return { label: t('inactive'), color: 'slate' };
+  };
+
+  const statusBadge = (color) => {
+    if (color === 'green') return { bg: colors.greenBg, color: colors.green };
+    if (color === 'red') return { bg: colors.redBg, color: colors.red };
+    return { bg: colors.slateBg, color: colors.slateText };
   };
 
   const openAdd = () => { setEditing(null); setForm(emptyForm); setModalOpen(true); };
@@ -114,16 +138,16 @@ export default function Customers() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: colors.textMuted }} />
         <input className="form-input pl-9" placeholder={t('searchByNameOrPhone')} value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
       {/* Customer Cards */}
       {filtered.length === 0 ? (
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-12 text-center">
-          <Users size={48} className="text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400 font-medium">{t('noCustomersFound')}</p>
-          <p className="text-slate-500 text-sm mt-1">{t('addFirstCustomer')}</p>
+        <div className="rounded-2xl p-12 text-center" style={{ background: colors.cardBg, border: `1px solid ${colors.cardBorder}` }}>
+          <Users size={48} className="mx-auto mb-4" style={{ color: colors.textMuted }} />
+          <p className="font-medium" style={{ color: colors.textPrimary }}>{t('noCustomersFound')}</p>
+          <p className="text-sm mt-1" style={{ color: colors.textMuted }}>{t('addFirstCustomer')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -131,51 +155,69 @@ export default function Customers() {
             const lastSale = getLastPurchase(c);
             const totalSpent = getTotalSpent(c);
             const status = getStatus(c);
+            const sb = statusBadge(status.color);
             const initials = c.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
             return (
-              <div key={c.id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5 hover:border-slate-600/50 transition-all">
+              <div key={c.id} className="rounded-2xl p-5 transition-all hover:-translate-y-0.5"
+                style={{
+                  background: colors.cardBg,
+                  border: `1px solid ${colors.cardBorder}`,
+                  boxShadow: 'var(--shadow-md, none)',
+                }}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white font-bold text-sm">
                       {initials}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">{c.name}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium inline-block mt-1 ${status.color}`}>{status.label}</span>
+                      <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{c.name}</p>
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium inline-block mt-1"
+                        style={{ background: sb.bg, color: sb.color }}>{status.label}</span>
                     </div>
                   </div>
-                  <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-colors">
+                  <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg transition-colors"
+                    style={{ color: colors.textMuted }}>
                     <Edit2 size={14} />
                   </button>
                 </div>
 
                 <div className="space-y-1.5 mb-3">
-                  {c.phone && <p className="text-xs text-slate-400 flex items-center gap-1.5"><Phone size={11} />{c.phone}</p>}
-                  {c.email && <p className="text-xs text-slate-400 flex items-center gap-1.5"><Mail size={11} />{c.email}</p>}
-                  {lastSale && <p className="text-xs text-slate-500">{t('lastPurchase')}: {lastSale.date}</p>}
-                  {totalSpent > 0 && <p className="text-xs font-medium text-emerald-400">TZS {totalSpent.toLocaleString()}</p>}
+                  {c.phone && <p className="text-xs flex items-center gap-1.5" style={{ color: colors.textMuted }}><Phone size={11} />{c.phone}</p>}
+                  {c.email && <p className="text-xs flex items-center gap-1.5" style={{ color: colors.textMuted }}><Mail size={11} />{c.email}</p>}
+                  {lastSale && <p className="text-xs" style={{ color: colors.textMuted }}>{t('lastPurchase')}: {lastSale.date}</p>}
+                  {totalSpent > 0 && <p className="text-xs font-medium" style={{ color: colors.green }}>{formatCurrency(totalSpent)}</p>}
                 </div>
 
                 <div className="flex gap-2">
-                  <button onClick={() => { setSelected(c); setProfileOpen(true); }} className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-xs font-medium">
+                  <button onClick={() => { setSelected(c); setProfileOpen(true); }}
+                    className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-medium transition-colors"
+                    style={{ background: colors.greenBg, color: colors.green }}>
                     <Eye size={12} />{t('profile')}
                   </button>
                   {c.phone && (
                     <>
-                      <a href={`tel:${c.phone}`} className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-xs font-medium">
+                      <a href={`tel:${c.phone}`}
+                        className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-medium transition-colors"
+                        style={{ background: colors.greenBg, color: colors.green }}>
                         <Phone size={12} />{t('call')}
                       </a>
-                      <a href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors text-xs font-medium">
+                      <a href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-medium transition-colors"
+                        style={{ background: colors.greenBg, color: colors.green }}>
                         <MessageCircle size={12} />{t('whatsApp')}
                       </a>
                     </>
                   )}
                 </div>
                 <div className="flex gap-2 mt-2">
-                  <button onClick={() => openEdit(c)} className="flex-1 p-2 rounded-xl bg-slate-500/10 text-slate-400 hover:bg-slate-500/20 transition-colors text-xs font-medium">
+                  <button onClick={() => openEdit(c)}
+                    className="flex-1 p-2 rounded-xl text-xs font-medium transition-colors"
+                    style={{ background: 'rgba(100,116,139,0.08)', color: colors.textMuted }}>
                     <Edit2 size={12} className="mr-1 inline" />{t('edit')}
                   </button>
-                  <button onClick={() => handleDelete(c.id, c.name)} className="flex-1 p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-xs font-medium">
+                  <button onClick={() => handleDelete(c.id, c.name)}
+                    className="flex-1 p-2 rounded-xl text-xs font-medium transition-colors"
+                    style={{ background: colors.redBg, color: colors.red }}>
                     <Trash2 size={12} className="mr-1 inline" />{t('delete')}
                   </button>
                 </div>
@@ -195,79 +237,85 @@ export default function Customers() {
           const totalVisits = cSales.length;
           const outstandingBalance = cSales.reduce((s, sale) => s + Number(sale.balance || 0), 0);
           const lastSale = cSales.length > 0 ? cSales.sort((a, b) => new Date(b.date) - new Date(a.date))[0] : null;
-          const status = getStatus(c);
+          const sb = statusBadge(getStatus(c).color);
           const daysSinceLast = lastSale ? Math.floor((Date.now() - new Date(lastSale.date).getTime()) / (1000 * 60 * 60 * 24)) : null;
 
-          // Favorite products - count by product name
           const prodCount = {};
           cSales.forEach(s => { prodCount[s.productName] = (prodCount[s.productName] || 0) + 1; });
           const favorites = Object.entries(prodCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
-          // Recent purchases
           const recentPurchases = [...cSales].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
 
           return (
             <div className="space-y-5">
               {/* Header */}
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                   {c.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-bold text-white">{c.name}</h2>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium inline-block mt-1 ${status.color}`}>{status.label}</span>
+                  <h2 className="text-lg font-bold" style={{ color: colors.textPrimary }}>{c.name}</h2>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-medium inline-block mt-1"
+                    style={{ background: sb.bg, color: sb.color }}>{getStatus(c).label}</span>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {c.phone && <a href={`tel:${c.phone}`} className="btn-ghost text-xs px-2 py-1"><Phone size={11} className="mr-1" />{c.phone}</a>}
-                    {c.phone && <a href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs px-2 py-1"><MessageCircle size={11} className="mr-1" />{t('whatsApp')}</a>}
+                    {c.phone && <a href={`tel:${c.phone}`} className="text-xs px-2 py-1 rounded-lg" style={{ color: colors.green, background: colors.greenBg }}><Phone size={11} className="mr-1 inline" />{c.phone}</a>}
+                    {c.phone && <a href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-xs px-2 py-1 rounded-lg" style={{ color: colors.green, background: colors.greenBg }}><MessageCircle size={11} className="mr-1 inline" />WhatsApp</a>}
                   </div>
-                  {c.email && <p className="text-xs text-slate-500 mt-1"><Mail size={11} className="mr-1 inline" />{c.email}</p>}
-                  {c.address && <p className="text-xs text-slate-500 mt-0.5"><MapPin size={11} className="mr-1 inline" />{c.address}</p>}
+                  {c.email && <p className="text-xs mt-1" style={{ color: colors.textMuted }}><Mail size={11} className="mr-1 inline" />{c.email}</p>}
+                  {c.address && <p className="text-xs mt-0.5" style={{ color: colors.textMuted }}><MapPin size={11} className="mr-1 inline" />{c.address}</p>}
                 </div>
               </div>
 
               {/* KPI Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
-                  <DollarSign size={16} className="mx-auto mb-1 text-emerald-400" />
-                  <p className="text-xs text-slate-500">{t('totalSpent')}</p>
-                  <p className="text-lg font-bold text-white mt-0.5">{formatCurrency(totalSpent)}</p>
+                <div className="rounded-xl p-4 text-center" style={{ background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.15)' }}>
+                  <DollarSign size={16} className="mx-auto mb-1" style={{ color: colors.green }} />
+                  <p className="text-xs" style={{ color: colors.textMuted }}>{t('totalSpent')}</p>
+                  <p className="text-lg font-bold mt-0.5" style={{ color: colors.textPrimary }}>{formatCurrency(totalSpent)}</p>
                 </div>
-                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
-                  <ShoppingCart size={16} className="mx-auto mb-1 text-emerald-400" />
-                  <p className="text-xs text-slate-500">{t('visits')}</p>
-                  <p className="text-lg font-bold text-white mt-0.5">{totalVisits}</p>
+                <div className="rounded-xl p-4 text-center" style={{ background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.15)' }}>
+                  <ShoppingCart size={16} className="mx-auto mb-1" style={{ color: colors.green }} />
+                  <p className="text-xs" style={{ color: colors.textMuted }}>{t('visits')}</p>
+                  <p className="text-lg font-bold mt-0.5" style={{ color: colors.textPrimary }}>{totalVisits}</p>
                 </div>
-                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
-                  <TrendingUp size={16} className="mx-auto mb-1 text-emerald-400" />
-                  <p className="text-xs text-slate-500">{t('avgPerVisit')}</p>
-                  <p className="text-lg font-bold text-white mt-0.5">{totalVisits > 0 ? formatCurrency(Math.round(totalSpent / totalVisits)) : '—'}</p>
+                <div className="rounded-xl p-4 text-center" style={{ background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.15)' }}>
+                  <TrendingUp size={16} className="mx-auto mb-1" style={{ color: colors.green }} />
+                  <p className="text-xs" style={{ color: colors.textMuted }}>{t('avgPerVisit')}</p>
+                  <p className="text-lg font-bold mt-0.5" style={{ color: colors.textPrimary }}>{totalVisits > 0 ? formatCurrency(Math.round(totalSpent / totalVisits)) : '\u2014'}</p>
                 </div>
-                <div className={outstandingBalance > 0 ? 'bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center' : 'bg-slate-500/10 border border-slate-500/20 rounded-xl p-4 text-center'}>
-                  <CreditCard size={16} className={`mx-auto mb-1 ${outstandingBalance > 0 ? 'text-red-400' : 'text-slate-400'}`} />
-                  <p className="text-xs text-slate-500">{t('balanceDue')}</p>
-                  <p className={`text-lg font-bold mt-0.5 ${outstandingBalance > 0 ? 'text-red-400' : 'text-white'}`}>{outstandingBalance > 0 ? formatCurrency(outstandingBalance) : '—'}</p>
+                <div className="rounded-xl p-4 text-center"
+                  style={{
+                    background: outstandingBalance > 0 ? 'rgba(220,38,38,0.06)' : 'rgba(100,116,139,0.06)',
+                    border: `1px solid ${outstandingBalance > 0 ? 'rgba(220,38,38,0.15)' : 'rgba(100,116,139,0.15)'}`,
+                  }}>
+                  <CreditCard size={16} className="mx-auto mb-1"
+                    style={{ color: outstandingBalance > 0 ? colors.red : colors.textMuted }} />
+                  <p className="text-xs" style={{ color: colors.textMuted }}>{t('balanceDue')}</p>
+                  <p className="text-lg font-bold mt-0.5"
+                    style={{ color: outstandingBalance > 0 ? colors.red : colors.textPrimary }}>
+                    {outstandingBalance > 0 ? formatCurrency(outstandingBalance) : '\u2014'}</p>
                 </div>
               </div>
 
               {/* Additional stats */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/5 rounded-xl p-4">
-                  <p className="text-xs text-slate-500">{t('lastPurchase')}</p>
-                  <p className="text-sm font-semibold text-white mt-1">{lastSale ? `${lastSale.date} · ${formatCurrency(lastSale.total)}` : t('noPurchases')}</p>
-                  {daysSinceLast !== null && <p className="text-xs text-slate-500 mt-0.5">{daysSinceLast} {t('daysAgo')}</p>}
+                <div className="rounded-xl p-4" style={{ background: colors.cardBg, border: `1px solid ${colors.cardBorder}` }}>
+                  <p className="text-xs" style={{ color: colors.textMuted }}>{t('lastPurchase')}</p>
+                  <p className="text-sm font-semibold mt-1" style={{ color: colors.textPrimary }}>{lastSale ? `${lastSale.date} \u00B7 ${formatCurrency(lastSale.total)}` : t('noPurchases')}</p>
+                  {daysSinceLast !== null && <p className="text-xs mt-0.5" style={{ color: colors.textMuted }}>{daysSinceLast} {t('daysAgo')}</p>}
                 </div>
-                <div className="bg-white/5 rounded-xl p-4">
-                  <p className="text-xs text-slate-500">{t('profitGenerated')}</p>
-                  <p className="text-sm font-semibold text-emerald-400 mt-1">{formatCurrency(totalProfit)}</p>
+                <div className="rounded-xl p-4" style={{ background: colors.cardBg, border: `1px solid ${colors.cardBorder}` }}>
+                  <p className="text-xs" style={{ color: colors.textMuted }}>{t('profitGenerated')}</p>
+                  <p className="text-sm font-semibold mt-1" style={{ color: colors.green }}>{formatCurrency(totalProfit)}</p>
                 </div>
-                <div className="bg-white/5 rounded-xl p-4">
-                  <p className="text-xs text-slate-500">{t('customerSince')}</p>
-                  <p className="text-sm font-semibold text-white mt-1">{c.dateAdded || t('na')}</p>
+                <div className="rounded-xl p-4" style={{ background: colors.cardBg, border: `1px solid ${colors.cardBorder}` }}>
+                  <p className="text-xs" style={{ color: colors.textMuted }}>{t('customerSince')}</p>
+                  <p className="text-sm font-semibold mt-1" style={{ color: colors.textPrimary }}>{c.dateAdded || t('na')}</p>
                 </div>
-                <div className="bg-white/5 rounded-xl p-4">
-                  <p className="text-xs text-slate-500">{t('lifetimeValueScore')}</p>
-                  <p className={`text-sm font-semibold mt-1 ${totalSpent >= 500000 ? 'text-emerald-400' : totalSpent >= 100000 ? 'text-emerald-400' : 'text-slate-400'}`}>
-                    {totalSpent >= 500000 ? `⭐ ${t('highValue')}` : totalSpent >= 100000 ? `📈 ${t('growing')}` : `🆕 ${t('new')}`}
+                <div className="rounded-xl p-4" style={{ background: colors.cardBg, border: `1px solid ${colors.cardBorder}` }}>
+                  <p className="text-xs" style={{ color: colors.textMuted }}>{t('lifetimeValueScore')}</p>
+                  <p className="text-sm font-semibold mt-1" style={{ color: totalSpent >= 100000 ? colors.green : colors.textMuted }}>
+                    {totalSpent >= 500000 ? `\u2B50 ${t('highValue')}` : totalSpent >= 100000 ? `\uD83D\uDCC8 ${t('growing')}` : `\uD83C\uDD95 ${t('new')}`}
                   </p>
                 </div>
               </div>
@@ -275,11 +323,13 @@ export default function Customers() {
               {/* Favorite Products */}
               {favorites.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5"><Star size={14} className="text-emerald-400" />{t('favoriteProducts')}</h4>
+                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5" style={{ color: colors.textPrimary }}>
+                    <Star size={14} style={{ color: colors.green }} />{t('favoriteProducts')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {favorites.map(([name, count], i) => (
-                      <span key={name} className="text-xs px-3 py-1.5 rounded-full bg-slate-700/50 text-slate-300">
-                        {i === 0 && '🥇'} {i === 1 && '🥈'} {i === 2 && '🥉'} {name} ({count}x)
+                      <span key={name} className="text-xs px-3 py-1.5 rounded-full"
+                        style={{ background: 'rgba(100,116,139,0.08)', color: colors.textMuted }}>
+                        {i === 0 && '\uD83E\uDD47'} {i === 1 && '\uD83E\uDD48'} {i === 2 && '\uD83E\uDD49'} {name} ({count}x)
                       </span>
                     ))}
                   </div>
@@ -289,27 +339,31 @@ export default function Customers() {
               {/* Recent Purchases */}
               {recentPurchases.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-white mb-2">{t('recentPurchases')}</h4>
-                  <div className="overflow-x-auto">
+                  <h4 className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>{t('recentPurchases')}</h4>
+                  <div className="overflow-x-auto rounded-xl" style={{ border: `1px solid ${colors.cardBorder}` }}>
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-slate-500 border-b border-slate-700">
-                          <th className="text-left py-2 pr-2 font-medium text-xs">{t('date')}</th>
-                          <th className="text-left py-2 px-2 font-medium text-xs">{t('product')}</th>
-                          <th className="text-center py-2 px-2 font-medium text-xs">{t('qty')}</th>
-                          <th className="text-right py-2 pl-2 font-medium text-xs">{t('total')}</th>
-                          <th className="text-center py-2 pl-2 font-medium text-xs">{t('status')}</th>
+                        <tr style={{ borderBottom: `1px solid ${colors.cardBorder}` }}>
+                          <th className="text-left py-2 pr-2 font-medium text-xs" style={{ color: colors.textMuted }}>{t('date')}</th>
+                          <th className="text-left py-2 px-2 font-medium text-xs" style={{ color: colors.textMuted }}>{t('product')}</th>
+                          <th className="text-center py-2 px-2 font-medium text-xs" style={{ color: colors.textMuted }}>{t('qty')}</th>
+                          <th className="text-right py-2 pl-2 font-medium text-xs" style={{ color: colors.textMuted }}>{t('total')}</th>
+                          <th className="text-center py-2 pl-2 font-medium text-xs" style={{ color: colors.textMuted }}>{t('status')}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {recentPurchases.map(s => (
-                          <tr key={s.id} className="border-b border-slate-700/30">
-                            <td className="py-2 pr-2 text-slate-400 text-xs">{s.date}</td>
-                            <td className="py-2 px-2 text-white text-xs">{s.productName}</td>
-                            <td className="py-2 px-2 text-center text-slate-400 text-xs">{s.quantity}</td>
-                            <td className="py-2 pl-2 text-right text-emerald-400 text-xs font-medium">{formatCurrency(s.total)}</td>
+                          <tr key={s.id} style={{ borderBottom: `1px solid ${colors.cardBorder}` }}>
+                            <td className="py-2 pr-2 text-xs" style={{ color: colors.textMuted }}>{s.date}</td>
+                            <td className="py-2 px-2 text-xs" style={{ color: colors.textPrimary }}>{s.productName}</td>
+                            <td className="py-2 px-2 text-center text-xs" style={{ color: colors.textMuted }}>{s.quantity}</td>
+                            <td className="py-2 pl-2 text-right text-xs font-medium" style={{ color: colors.green }}>{formatCurrency(s.total)}</td>
                             <td className="py-2 pl-2 text-center">
-                              <span className={`text-xs px-1.5 py-0.5 rounded-full ${s.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : s.paymentStatus === 'partial' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                              <span className="text-xs px-1.5 py-0.5 rounded-full font-medium"
+                                style={{
+                                  background: s.paymentStatus === 'paid' || s.paymentStatus === 'partial' ? 'rgba(5,150,105,0.08)' : 'rgba(220,38,38,0.08)',
+                                  color: s.paymentStatus === 'paid' || s.paymentStatus === 'partial' ? '#059669' : '#dc2626',
+                                }}>
                                 {s.paymentStatus === 'paid' ? t('paid') : s.balance > 0 ? `${t('due')} ${formatCurrency(s.balance)}` : t('debt')}
                               </span>
                             </td>
@@ -329,19 +383,19 @@ export default function Customers() {
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? t('editCustomer') : t('addCustomer')}>
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('name')} *</label>
+            <label className="text-xs font-semibold mb-1 block" style={{ color: colors.textMuted }}>{t('name')} *</label>
             <input className="form-input" placeholder={t('customerName')} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('phone')}</label>
+            <label className="text-xs font-semibold mb-1 block" style={{ color: colors.textMuted }}>{t('phone')}</label>
             <input className="form-input" placeholder={t('phonePlaceholder')} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('email')}</label>
+            <label className="text-xs font-semibold mb-1 block" style={{ color: colors.textMuted }}>{t('email')}</label>
             <input className="form-input" placeholder={t('emailPlaceholder')} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">{t('address')}</label>
+            <label className="text-xs font-semibold mb-1 block" style={{ color: colors.textMuted }}>{t('address')}</label>
             <input className="form-input" placeholder={t('address')} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
           </div>
           <button onClick={handleSave} className="btn-primary w-full justify-center" disabled={saving}>
