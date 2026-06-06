@@ -26,6 +26,7 @@ import Suppliers from './pages/Suppliers';
 import PurchaseOrders from './pages/PurchaseOrders';
 import CashFlow from './pages/CashFlow';
 import InventoryHistory from './pages/InventoryHistory';
+import DailyReport from './pages/DailyReport';
 import Chat from './pages/Chat';
 import Settings from './pages/Settings';
 import ManageUsers from './pages/ManageUsers';
@@ -132,6 +133,7 @@ export default function App() {
             <Route path="/purchase-orders" element={<ProtectedRoute><Layout><PurchaseOrders /></Layout></ProtectedRoute>} />
             <Route path="/cash-flow" element={<ProtectedRoute><Layout><CashFlow /></Layout></ProtectedRoute>} />
             <Route path="/inventory-history" element={<ProtectedRoute><Layout><InventoryHistory /></Layout></ProtectedRoute>} />
+            <Route path="/daily-report" element={<ProtectedRoute><Layout><DailyReport /></Layout></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><Layout><Chat /></Layout></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
             <Route path="/manage-users" element={<ProtectedRoute><Layout><ManageUsers /></Layout></ProtectedRoute>} />

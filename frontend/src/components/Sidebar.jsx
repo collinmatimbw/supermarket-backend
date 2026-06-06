@@ -43,6 +43,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
   const adminNavItems = [
     { path: '/', label: t('dashboard'), icon: LayoutDashboard },
     { path: '/manage-users', label: t('manageUsers'), icon: Shield },
+    { path: '/daily-report', label: 'Daily Report', icon: FileText },
     { path: '/settings', label: t('settings'), icon: Settings },
   ];
 
