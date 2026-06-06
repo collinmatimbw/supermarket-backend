@@ -37,6 +37,7 @@ export default function Sidebar({ mobileOpen, onToggleMobile }) {
     { path: '/tasks', label: t('tasks'), icon: ClipboardList },
     { path: '/chat', label: t('skycAi'), icon: MessageSquare },
     { path: '/reports', label: t('reports'), icon: FileText },
+    { path: '/daily-report', label: 'Daily Report', icon: FileText },
     { path: '/settings', label: t('settings'), icon: Settings },
   ];
 
