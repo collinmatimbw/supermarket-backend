@@ -40,9 +40,7 @@ export default function Settings() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await api.post('/settings/import-excel', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await api.post('/settings/import-excel', formData, { timeout: 120000 });
       toast.success(`Imported ${res.data.totalImported || 0} records`);
       loadInfo();
     } catch (e) {
