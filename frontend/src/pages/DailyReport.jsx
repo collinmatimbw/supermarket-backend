@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Printer, Calendar, DollarSign, ShoppingCart, TrendingUp, TrendingDown, CreditCard, Wallet } from 'lucide-react';
+import { Printer, Calendar, ShoppingCart, TrendingUp, TrendingDown, CreditCard, Wallet, Users, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PageHeader from '../components/PageHeader';
 import { LoadingState } from '../components/LoadingState';
@@ -13,6 +13,8 @@ export default function DailyReport() {
   const [date, setDate] = useState(today);
   const [sales, setSales] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState('');
   const [loading, setLoading] = useState(true);
   const printRef = useRef();
 
@@ -21,15 +23,18 @@ export default function DailyReport() {
     Promise.all([
       api.get('/sales'),
       api.get('/expenses'),
-    ]).then(([sRes, eRes]) => {
+      api.get('/customers'),
+    ]).then(([sRes, eRes, cRes]) => {
       setSales(sRes.data.data);
       setExpenses(eRes.data.data);
+      setCustomers(cRes.data.data || []);
     }).catch(e => toast.error(e.message))
     .finally(() => setLoading(false));
   }, []);
 
-  const daySales = sales.filter(s => s.date === date);
+  const daySales = sales.filter(s => s.date === date && (!selectedCustomer || s.customerName === selectedCustomer));
   const dayExpenses = expenses.filter(e => e.date === date && e.visible !== 'false');
+  const customerNames = [...new Set(sales.filter(s => s.customerName && s.customerName !== 'Walk-in').map(s => s.customerName))].sort();
 
   const totalRevenue = daySales.reduce((s, sale) => s + Number(sale.total || 0), 0);
   const totalProfit = daySales.reduce((s, sale) => s + Number(sale.profit || 0), 0);
@@ -75,7 +80,7 @@ export default function DailyReport() {
         @media print { .print-btn { display: none; } }
       </style></head><body>
       <h1>SKYC CRM - Daily Report</h1>
-      <h2>${date}</h2>
+      <h2>${date}${selectedCustomer ? ` · ${selectedCustomer}` : ''}</h2>
       <div class="kpi-grid">
         <div class="kpi"><div>Total Sales</div><div class="kpi-value">${formatCurrency(totalRevenue)}</div></div>
         <div class="kpi"><div>Total Profit</div><div class="kpi-value">${formatCurrency(totalProfit)}</div></div>
@@ -117,10 +122,22 @@ export default function DailyReport() {
         <button onClick={handlePrint} className="btn-primary text-sm"><Printer size={15} className="mr-1.5" />Print Report</button>
       } />
 
-      <div className="flex gap-3 items-center">
+      <div className="flex flex-wrap gap-3 items-center">
         <Calendar size={15} style={{ color: 'var(--text-muted)' }} />
         <input className="form-input w-auto" type="date" value={date} onChange={e => setDate(e.target.value)} />
+        <div className="relative" style={{ minWidth: 200 }}>
+          <Users size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+          <select className="form-input pl-9" value={selectedCustomer}
+            onChange={e => setSelectedCustomer(e.target.value)}
+            style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
+            <option value="">All Customers</option>
+            {customerNames.map(name => <option key={name} value={name}>{name}</option>)}
+          </select>
+        </div>
         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{daySales.length} sales · {dayExpenses.length} expenses</span>
+        {selectedCustomer && (
+          <button onClick={() => setSelectedCustomer('')} className="text-xs" style={{ color: 'var(--red)' }}>Clear</button>
+        )}
       </div>
 
       <div ref={printRef} className="space-y-4">
